@@ -1,0 +1,5 @@
+- maybe some better int set container for sparse features?
+    - https://c-cube.github.io/ocaml-containers/last/containers/index.html
+- parmap makes trees correlated?
+- random sparse feature from union \ intersection
+- when feature column is uniform
