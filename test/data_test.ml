@@ -1,3 +1,3 @@
 
-module Dt = Data.Make(Data_tabular)
-module Ds = Data.Make(Data_sparse)
+module Dt = Data.Make(Tabular)
+module Ds = Data.Make(Sparse)

@@ -1,4 +1,4 @@
-module Data = Data.Make(Data_sparse)
+module Data = Data.Make(Sparse)
 open Tree.Make(Data)
 open Data
 open Printf

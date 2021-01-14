@@ -1,6 +1,6 @@
 
 (* let () = Printf.printf "Start...\n"; flush stdout;; *)
-module Data = Data.Make(Data_sparse)
+module Data = Data.Make(Sparse)
 open Forest.Make(Data)
 open Data
 

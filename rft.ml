@@ -1,4 +1,4 @@
-module Data = Data.Make(Data_tabular)
+module Data = Data.Make(Tabular)
 open Forest.Make(Data)
 open Data
 
