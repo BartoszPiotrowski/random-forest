@@ -12,7 +12,7 @@ make native
     -train_y test/data/field_theory_train.labels \
     -test_x  test/data/field_theory_test.features
 
-# Tabuar version
+# Tabular version
 ./rft.native \
     -train_x test/data/iris_train.features \
     -train_y test/data/iris_train.labels \
