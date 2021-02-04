@@ -90,12 +90,12 @@ let split_impur impur rule {indices; features; labels} =
 exception Empty_list
 
 (* m -- numbers of features to choose from *)
-let gini_rule ?m examples =
+let gini_rule ?m:(m=0) examples =
     let {indices; features; _} = examples in
     let n = List.length indices in
     let m = match m with
-    | None -> n |> float_of_int |> sqrt |> int_of_float
-    | Some m -> m in
+    | 0 -> n |> float_of_int |> sqrt |> int_of_float
+    | m -> m in
     let random_feas = random_features examples m in
     let rec loop features impurs =
         match features with

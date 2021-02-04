@@ -18,7 +18,7 @@ module Make = functor (Data : DATA) -> struct
 
     type tree = Node of Data.split_rule * tree * tree | Leaf of Data.label
 
-    let tree ?max_depth:(max_depth=20) rule examples =
+    let tree ?max_depth:(max_depth=10) rule examples =
         let rec loop examples depth =
             if Data.uniform_labels examples || depth = 0 then
                 Leaf(Data.random_label examples)
