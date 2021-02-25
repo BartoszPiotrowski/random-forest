@@ -53,6 +53,12 @@ let print_example {indices; features; labels} n =
         | None -> ()
         | Some labels -> printf "# %n\n%!" labels.(n)
 
+let print_example_2 {features; label} =
+    ISet.iter (fun f -> printf "%n %!" f) features;
+    match label with
+        | None -> ()
+        | Some l -> printf "# %n\n%!" l
+
 (*
 let random_feature {indices; features; _} =
     let random_example = features.(Utils.choose_random indices) in
@@ -114,7 +120,6 @@ let gini_rule ?m:(m=0) examples =
         match feas_impurs_sorted with
         | [] -> raise Empty_list
         | (f, _) :: _ -> f in
-    let () = Printf.printf "%i" best_fea in
     fun {features; label} -> ISet.mem best_fea features
 
 let print_label l = l |> printf "%n\n"

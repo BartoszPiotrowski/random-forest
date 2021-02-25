@@ -1,10 +1,11 @@
 open Printf
 
 type indices = int list
-type example = float array
-type features = example array
+type example_features = float array
+type features = example_features array
 type label = string
 type labels = label array
+type example = {features : example_features; label : label option}
 type examples = {
     indices : indices;
     features : features;
@@ -51,7 +52,7 @@ let random_thr x =
 let random_rule examples =
     let n = Random.int (n_features examples) in
     let col = col_to_list n examples in
-    (fun example -> example.(n) < random_thr col)
+    (fun {features; label} -> features.(n) < random_thr col)
 
 let best_gini_thr = Impurity.best_split Impurity.gini_impur
 
@@ -79,7 +80,7 @@ let gini_rule ?m examples =
         match cols_impurs_sorted with
         | [] -> raise Empty_list
         | (c, (t, _)) :: _ -> c, t in
-    (fun example -> example.(best_col) < best_thr)
+    (fun {features; label} -> features.(best_col) < best_thr)
 
 let print_label l = l |> printf "%s\n"
 

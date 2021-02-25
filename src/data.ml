@@ -16,6 +16,7 @@ module type DATA_CONCRETE = sig
     val load_labels : string -> labels
     val load_features : string -> features
     val print_example : examples -> int -> unit
+(*     val print_example_2 : example -> unit *)
     val print_label : label -> unit
     val random_rule : examples -> rule
     val gini_rule : ?m:int -> examples -> rule
@@ -35,6 +36,11 @@ module Make = functor (D : DATA_CONCRETE) -> struct
 
     let indices {D.indices; D.features; _} =
         indices
+
+    let labels {D.indices; D.features; D.labels} =
+        match labels with
+        | None -> failwith "no labels"
+        | Some (l) -> Array.to_list l
 
     let get examples i =
         let label = match examples.labels with
@@ -56,7 +62,6 @@ module Make = functor (D : DATA_CONCRETE) -> struct
         | h :: t, Some labels -> labels.(h)
 
     let random_label {D.indices; D.features; D.labels} =
-        let () = Printf.printf "bbb" in
         match labels with
         | None -> failwith "unlabeled examples"
         | Some labels -> let i = Utils.choose_random indices in labels.(i)
@@ -135,7 +140,7 @@ module Make = functor (D : DATA_CONCRETE) -> struct
         | Some ls, None -> failwith "cannot add unlabeled example"
         | Some ls, Some l -> Some (Array.append [|l|] ls) in
             {
-                D.indices = max_i :: examples.indices;
+                D.indices = (max_i + 1) :: examples.indices;
                 D.features = Array.append [|example.features|] examples.features;
                 D.labels = new_labels
             }

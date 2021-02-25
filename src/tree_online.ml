@@ -22,6 +22,8 @@ module type DATA = sig
     val random_example : examples -> example
     val fold_left : ('a -> example -> 'a) -> 'a -> examples -> 'a
     val print : examples -> unit
+(*     val print_example_2 : example -> unit *)
+    val labels : examples -> label list
 end
 
 module Make = functor (Data : DATA) -> struct
@@ -40,16 +42,23 @@ module Make = functor (Data : DATA) -> struct
     let make_new_node examples =
         let split_rule = Data.split (Data.gini_rule examples) in
         let examples_l, examples_r = split_rule examples in
-        let () = printf "aaa" in
-        let () = Data.print examples_r in
-        let () = printf "aaa\n\n\n\naaa" in
-        let () = Data.print examples_l in
-        Node(split_rule,
-            Leaf(Data.random_label examples_l, examples_l),
-            Leaf(Data.random_label examples_r, examples_r))
+        if Data.is_empty examples_l || Data.is_empty examples_r
+        then Leaf(Data.random_label examples, examples)
+        else
+            Node(split_rule,
+                Leaf(Data.random_label examples_l, examples_l),
+                Leaf(Data.random_label examples_r, examples_r))
 
+(*
     let extend examples =
         if Data.length examples > 10 then true else false
+*)
+
+    let extend examples =
+        let labels = Data.labels examples in
+        let imp = Impurity.gini_impur labels in
+        imp > 0.5
+
     (* TODO more sophisticated condition needed *)
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
