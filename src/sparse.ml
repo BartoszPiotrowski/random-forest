@@ -5,8 +5,9 @@ module ISet = Set.Make(Int)
 type indices = int list
 type label = int
 type labels = label array
-type example = ISet.t
-type features = example array
+type example_features = ISet.t
+type features = example_features array
+type example = {features : example_features; label : label option}
 type examples = {
     indices : indices;
     features : features;
@@ -47,10 +48,10 @@ let n_features examples =
     List.length (all_features examples)
 
 let print_example {indices; features; labels} n =
-    ISet.iter (fun f -> printf "%n " f) features.(n);
+    ISet.iter (fun f -> printf "%n %!" f) features.(n);
     match labels with
         | None -> ()
-        | Some labels -> printf "# %n\n" labels.(n)
+        | Some labels -> printf "# %n\n%!" labels.(n)
 
 (*
 let random_feature {indices; features; _} =
@@ -74,7 +75,7 @@ let random_features examples n =
     loop [] n
 
 let random_rule examples =
-    fun example -> ISet.mem (random_feature examples) example
+    fun {features; label} -> ISet.mem (random_feature examples) features
 
 let split_impur impur rule {indices; features; labels} =
     let labels =
@@ -113,6 +114,7 @@ let gini_rule ?m:(m=0) examples =
         match feas_impurs_sorted with
         | [] -> raise Empty_list
         | (f, _) :: _ -> f in
-    fun example -> ISet.mem best_fea example
+    let () = Printf.printf "%i" best_fea in
+    fun {features; label} -> ISet.mem best_fea features
 
 let print_label l = l |> printf "%n\n"

@@ -14,11 +14,14 @@ module type DATA = sig
     val random_subset : examples -> examples
     val split : rule -> split_rule
     val split_rev : split_rule -> rule
-    val gini_rule : examples -> split_rule
+    val gini_rule : ?m:int -> examples -> rule
     val length : examples -> int
-    val label : example -> label
+    val label : example -> label option
     val examples_of_1 : example -> examples
     val add : examples -> example -> examples
+    val random_example : examples -> example
+    val fold_left : ('a -> example -> 'a) -> 'a -> examples -> 'a
+    val print : examples -> unit
 end
 
 module Make = functor (Data : DATA) -> struct
@@ -27,12 +30,20 @@ module Make = functor (Data : DATA) -> struct
         | Node of Data.split_rule * tree * tree
         | Leaf of Data.label * Data.examples
 
-    let leaf example = Leaf (Data.label example, Data.examples_of_1 example)
+    let leaf example =
+        let l = match Data.label example with
+        | None -> failwith "label required"
+        | Some l -> l in
+        Leaf (l, Data.examples_of_1 example)
 
     (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
     let make_new_node examples =
-        let split_rule = Data.gini_rule examples in
+        let split_rule = Data.split (Data.gini_rule examples) in
         let examples_l, examples_r = split_rule examples in
+        let () = printf "aaa" in
+        let () = Data.print examples_r in
+        let () = printf "aaa\n\n\n\naaa" in
+        let () = Data.print examples_l in
         Node(split_rule,
             Leaf(Data.random_label examples_l, examples_l),
             Leaf(Data.random_label examples_r, examples_r))
@@ -56,6 +67,9 @@ module Make = functor (Data : DATA) -> struct
         in
         loop tree
 
+    let tree examples =
+        let example = Data.random_example examples in
+        Data.fold_left add (leaf example) examples
 
     let classify examples tree =
         let rec loop tree examples =

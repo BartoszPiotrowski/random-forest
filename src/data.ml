@@ -1,10 +1,11 @@
 
 module type DATA_CONCRETE = sig
-    type example
+    type example_features
     type label
     type indices = int list
-    type features = example array
+    type features = example_features array
     type labels = label array
+    type example = {features : example_features; label : label option}
     type examples = {
         indices : indices;
         features : features;
@@ -35,6 +36,12 @@ module Make = functor (D : DATA_CONCRETE) -> struct
     let indices {D.indices; D.features; _} =
         indices
 
+    let get examples i =
+        let label = match examples.labels with
+        | None -> None
+        | Some ls -> Some ls.(i) in
+        {D.features = examples.features.(i); D.label = label}
+
     let print examples =
         let inds = indices examples in
         List.iter (D.print_example examples) inds
@@ -49,6 +56,7 @@ module Make = functor (D : DATA_CONCRETE) -> struct
         | h :: t, Some labels -> labels.(h)
 
     let random_label {D.indices; D.features; D.labels} =
+        let () = Printf.printf "bbb" in
         match labels with
         | None -> failwith "unlabeled examples"
         | Some labels -> let i = Utils.choose_random indices in labels.(i)
@@ -69,17 +77,74 @@ module Make = functor (D : DATA_CONCRETE) -> struct
                     if labels.(h1) = labels.(h2) then uniform (h2 :: t) else false in
             uniform indices
 
-    let split rule {D.indices; D.features; D.labels} =
+    let split rule examples =
+        let {D.indices; D.features; D.labels} = examples in
         let rec loop inds_l inds_r = function
             | [] -> (inds_l, inds_r)
             | h :: t ->
-                match rule features.(h) with
+                let example = get examples h in
+                match rule example with
                 | true -> loop (h :: inds_l) inds_r t
                 | false -> loop inds_l (h :: inds_r) t in
         let inds_l, inds_r = loop [] [] indices in
         ({D.indices = inds_l; D.features; D.labels},
          {D.indices = inds_r; D.features; D.labels})
 
-(* let split x  = Utils.time (split x) *)
+    let examples_of_1 (example : example) =
+        let label = match example.label with
+        | None -> None
+        | Some l -> Some [|l|] in
+        {
+            D.indices=[0];
+            D.features=[|example.features|];
+            D.labels=label
+        }
+
+    let split_rev (split_rule : split_rule) =
+        function example ->
+            let example = examples_of_1 example in
+            let l, r = split_rule example in
+            match is_empty l, is_empty r with
+            | false, true -> true
+            | true, false -> false
+            | _, _ -> failwith "one example goes either left or right"
+
+    let length {D.indices; D.features; D.labels} =
+        List.length indices
+
+
+    let random_example {D.indices; D.features; D.labels} =
+        let i = Utils.choose_random indices in
+        let f = features.(i) in
+        let l = match labels with
+            | None -> None
+            | Some l -> Some l.(i) in
+        {D.features = f; D.label = l}
+
+    let label {D.features; D.label} =
+        label
+
+    let unlabel {D.features; D.label} =
+        features
+
+
+    let add examples example =
+        let max_i = Utils.max_list examples.indices in
+        let new_labels = match examples.labels, example.label with
+        | None, _ -> None
+        | Some ls, None -> failwith "cannot add unlabeled example"
+        | Some ls, Some l -> Some (Array.append [|l|] ls) in
+            {
+                D.indices = max_i :: examples.indices;
+                D.features = Array.append [|example.features|] examples.features;
+                D.labels = new_labels
+            }
+
+    let fold_left f s examples =
+        let f' acc i =
+            f acc (get examples i)
+        in
+        List.fold_left f' s examples.indices
+
 
 end
