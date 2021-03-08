@@ -64,14 +64,21 @@ module Make = functor (Data : DATA) -> struct
             | Node (split_rule, left_tree, right_tree) ->
 (*                 let rule = Data.split_rev split_rule in *)
 (*                 (match rule example with *)
+            let t = Sys.time () in
                 let examples_l, examples_r = split_rule example in
+            let () = Printf.printf "split %.5f s\n%!" (Sys.time() -.  t) in
                 (match Data.is_empty examples_l, Data.is_empty examples_r with
                 | false, true -> Node(split_rule, loop left_tree, right_tree)
                 | true, false  -> Node(split_rule, left_tree, loop right_tree)
                 | _, _ -> failwith "single example goes either left or right")
             | Leaf (label, examples) ->
+            let t = Sys.time () in
                 let examples = Data.append examples example in
-                if extend examples then make_new_node examples
+            let () = Printf.printf "append %.5f s\n%!" (Sys.time() -.  t) in
+                if extend examples then
+            let t = Sys.time () in
+                    let n = make_new_node examples in
+            let () = Printf.printf "new node %.5f s\n%!" (Sys.time() -.  t) in n
                 else Leaf (label, examples)
         in
         loop tree
