@@ -1,22 +1,29 @@
 module Make = functor (Data : Tree_online.DATA) -> struct
     module Tree = Tree_online.Make(Data)
 
-    let empty () = {trees = []; examples = Data.empty}
+    type forest = {trees : Tree.tree list; examples : Data.examples}
+
+    let empty = []
 
     let add forest example =
-(*         let () = Printf.printf "%n\n%!" (List.length forest) in *)
-        let example, updated_examples = Data.add forest.examples example in
-        (* now example is of type examples *)
+        let t1 = Sys.time () in
         let updated_trees =
-            List.map (fun tree -> Tree.add tree example) forest in
-        let n_trees = List.length forest.trees in
+(*             Parmap.parmap (fun tree -> Tree.add tree example) (Parmap.L
+               forest) in *)
+            List.map (fun tree ->
+                let t_in = Sys.time () in
+                let t = Tree.add tree example in
+(*          let () = Printf.printf "t_in %.2f s\n%!" (Sys.time() -. t_in) in *)
+                t
+                ) forest in
+        let () = Printf.printf "t %.2f s\n%!" (Sys.time() -. t1) in
+        let n_trees = List.length forest in
         let add_new_tree = (n_trees = 0) || (Random.int n_trees = 0) in
-        if add_new_tree then (Tree.leaf example) :: updated_trees
-        else {trees=updated_trees; examples=updated_examples}
+        if add_new_tree then Tree.leaf example :: updated_trees
+        else updated_trees
 
     let forest examples =
-        let forest = empty () in
-        Data.fold_left add forest examples
+        Data.fold_left add empty examples
 
 (*
     let forest tree n examples =
@@ -41,7 +48,8 @@ module Make = functor (Data : Tree_online.DATA) -> struct
             | _  -> failwith "Illegal value of compare." in
         let max_freq_cls = Hashtbl.fold update_max_cl tbl ([], 1) in
         match max_freq_cls with
-        | ([], _) -> failwith "At least one class needs to have maximal frequency."
+        | ([], _) ->
+            failwith "At least one class needs to have maximal frequency."
         | ([x], _) -> x
         | (l, _) -> Utils.choose_random l
 

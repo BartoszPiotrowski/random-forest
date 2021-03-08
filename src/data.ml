@@ -108,11 +108,18 @@ module Make = functor (D : DATA_CONCRETE) -> struct
             | Some ls -> Some (Array.append ls [|label|])
                (* previously (Array.append [|label|] ls) TODO investigate*)
         in
-        {
-            D.indices = new_indices;
-            D.features = new_features;
-            D.labels = new_labels
-        }
+        (
+            {
+                D.indices = [max_i];
+                D.features = new_features;
+                D.labels = new_labels
+            },
+            {
+                D.indices = new_indices;
+                D.features = new_features;
+                D.labels = new_labels
+            }
+        )
 
     let append {D.indices=indices1; D.features=features1; D.labels=labels1}
                {D.indices=indices2; D.features=features2; D.labels=labels2} =
@@ -123,6 +130,11 @@ module Make = functor (D : DATA_CONCRETE) -> struct
 
     let get {D.indices; D.features; D.labels} i =
         {D.indices=[i]; D.features; D.labels}
+(*
+        match labels with
+        | None -> failwith "unlabeled examples"
+        | Some labels -> (features.(i), labels.(i))
+*)
 
     let fold_left f s examples =
         let f' acc i = f acc (get examples i) in

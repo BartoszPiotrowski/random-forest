@@ -19,7 +19,7 @@ module type DATA = sig
     val gini_rule : ?m:int -> examples -> rule
     val length : examples -> int
 (*     val label : examples -> label option *)
-    val add : examples -> example_features * label -> examples
+    val add : examples -> example_features * label -> examples * examples
     val random_example : examples -> examples
     val fold_left : ('a -> examples -> 'a) -> 'a -> examples -> 'a
     val print : examples -> unit
@@ -75,6 +75,8 @@ module Make = functor (Data : DATA) -> struct
                 else Leaf (label, examples)
         in
         loop tree
+
+(*     let add = Utils.time add *)
 
     let tree examples =
         let example = Data.random_example examples in
