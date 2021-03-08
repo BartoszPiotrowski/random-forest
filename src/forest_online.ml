@@ -9,12 +9,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         let updated_trees =
 (*             Parmap.parmap (fun tree -> Tree.add tree example) (Parmap.L
                forest) in *)
-            List.map (fun tree ->
-                let t_in = Sys.time () in
-                let t = Tree.add tree example in
-                let () = Printf.printf "add %.5f s\n%!" (Sys.time() -. t_in) in
-                t
-                ) forest in
+            List.map (fun tree -> Tree.add tree example) forest in
         let n_trees = List.length forest in
         let add_new_tree = (n_trees = 0) || (Random.int n_trees = 0) in
         if add_new_tree then Tree.leaf example :: updated_trees

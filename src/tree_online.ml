@@ -53,9 +53,14 @@ module Make = functor (Data : DATA) -> struct
 *)
 
     let extend examples =
+        let t = Sys.time () in
         let labels = Data.labels examples in
+        let () = Printf.printf "labels %.5f s\n%!" (Sys.time() -. t) in
+        let t = Sys.time () in
         let imp = Impurity.gini_impur labels in
+        let () = Printf.printf "impur %.5f s\n%!" (Sys.time() -. t) in
         imp > 0.5
+
     (* TODO more sophisticated condition needed *)
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
@@ -64,24 +69,14 @@ module Make = functor (Data : DATA) -> struct
             | Node (split_rule, left_tree, right_tree) ->
 (*                 let rule = Data.split_rev split_rule in *)
 (*                 (match rule example with *)
-            let t = Sys.time () in
                 let examples_l, examples_r = split_rule example in
-            let () = Printf.printf "split %.5f s\n%!" (Sys.time() -.  t) in
                 (match Data.is_empty examples_l, Data.is_empty examples_r with
                 | false, true -> Node(split_rule, loop left_tree, right_tree)
                 | true, false  -> Node(split_rule, left_tree, loop right_tree)
                 | _, _ -> failwith "single example goes either left or right")
             | Leaf (label, examples) ->
-            let t = Sys.time () in
                 let examples = Data.append examples example in
-            let () = Printf.printf "append %.5f s\n%!" (Sys.time() -.  t) in
-            let t = Sys.time () in
-                let e = extend examples in
-            let () = Printf.printf "extend %.5f s\n%!" (Sys.time() -.  t) in
-                if e then
-            let t = Sys.time () in
-                    let n = make_new_node examples in
-            let () = Printf.printf "new node %.5f s\n%!" (Sys.time() -.  t) in n
+                if extend examples then make_new_node examples
                 else Leaf (label, examples)
         in
         loop tree
