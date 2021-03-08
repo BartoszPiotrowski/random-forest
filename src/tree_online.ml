@@ -75,7 +75,10 @@ module Make = functor (Data : DATA) -> struct
             let t = Sys.time () in
                 let examples = Data.append examples example in
             let () = Printf.printf "append %.5f s\n%!" (Sys.time() -.  t) in
-                if extend examples then
+            let t = Sys.time () in
+                let e = extend examples in
+            let () = Printf.printf "extend %.5f s\n%!" (Sys.time() -.  t) in
+                if e then
             let t = Sys.time () in
                     let n = make_new_node examples in
             let () = Printf.printf "new node %.5f s\n%!" (Sys.time() -.  t) in n
