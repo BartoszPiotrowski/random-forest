@@ -5,12 +5,11 @@ module type DATA_CONCRETE = sig
     type indices = int list
     type features = example_features array
     type labels = label array
-    type example = {features : example_features; label : label option}
     type examples = {
         indices : indices;
         features : features;
         labels : labels option}
-    type rule = example -> bool
+    type rule = example_features -> bool
     type split_rule = examples -> examples * examples
     val labels : examples -> label list
     val load_labels : string -> labels
@@ -42,15 +41,12 @@ module Make = functor (D : DATA_CONCRETE) -> struct
         | None -> failwith "no labels"
         | Some (l) -> Array.to_list l
 
-    let get examples i =
-        let label = match examples.labels with
-        | None -> None
-        | Some ls -> Some ls.(i) in
-        {D.features = examples.features.(i); D.label = label}
-
     let print examples =
         let inds = indices examples in
         List.iter (D.print_example examples) inds
+
+    let empty =
+        {D.indices=[]; D.features=[||]; D.labels=Some [||]}
 
     let is_empty {D.indices; D.features; D.labels} =
         indices = []
@@ -82,74 +78,53 @@ module Make = functor (D : DATA_CONCRETE) -> struct
                     if labels.(h1) = labels.(h2) then uniform (h2 :: t) else false in
             uniform indices
 
-    let split rule examples =
-        let {D.indices; D.features; D.labels} = examples in
+    let split rule {D.indices; D.features; D.labels} =
         let rec loop inds_l inds_r = function
             | [] -> (inds_l, inds_r)
             | h :: t ->
-                let example = get examples h in
-                match rule example with
+                match rule features.(h) with
                 | true -> loop (h :: inds_l) inds_r t
                 | false -> loop inds_l (h :: inds_r) t in
         let inds_l, inds_r = loop [] [] indices in
         ({D.indices = inds_l; D.features; D.labels},
          {D.indices = inds_r; D.features; D.labels})
 
-    let examples_of_1 (example : example) =
-        let label = match example.label with
-        | None -> None
-        | Some l -> Some [|l|] in
-        {
-            D.indices=[0];
-            D.features=[|example.features|];
-            D.labels=label
-        }
-
-    let split_rev (split_rule : split_rule) =
-        function example ->
-            let example = examples_of_1 example in
-            let l, r = split_rule example in
-            match is_empty l, is_empty r with
-            | false, true -> true
-            | true, false -> false
-            | _, _ -> failwith "one example goes either left or right"
-
     let length {D.indices; D.features; D.labels} =
         List.length indices
 
-
     let random_example {D.indices; D.features; D.labels} =
         let i = Utils.choose_random indices in
-        let f = features.(i) in
-        let l = match labels with
-            | None -> None
-            | Some l -> Some l.(i) in
-        {D.features = f; D.label = l}
-
-    let label {D.features; D.label} =
-        label
-
-    let unlabel {D.features; D.label} =
-        features
-
+        {D.indices=[i]; D.features=features; D.labels=labels}
 
     let add examples example =
         let max_i = Utils.max_list examples.indices in
-        let new_labels = match examples.labels, example.label with
-        | None, _ -> None
-        | Some ls, None -> failwith "cannot add unlabeled example"
-        | Some ls, Some l -> Some (Array.append [|l|] ls) in
-            {
-                D.indices = (max_i + 1) :: examples.indices;
-                D.features = Array.append [|example.features|] examples.features;
-                D.labels = new_labels
-            }
+        let new_indices = (max_i + 1) :: examples.indices in
+        let features, label = example in
+        let new_features =
+            Array.append [|features|] examples.features in
+        let new_labels =
+            match examples.labels with
+            | None -> failwith "cannot add labeled example to unlabeled examples"
+            | Some ls -> Some (Array.append ls [|label|])
+               (* previously (Array.append [|label|] ls) TODO investigate*)
+        in
+        {
+            D.indices = new_indices;
+            D.features = new_features;
+            D.labels = new_labels
+        }
+
+    let append {D.indices=indices1; D.features=features1; D.labels=labels1}
+               {D.indices=indices2; D.features=features2; D.labels=labels2} =
+    assert (features1 == features2);
+    assert (labels1 == labels2);
+    let new_indices = List.append indices1 indices2 in
+    {D.indices=new_indices; D.features=features1; D.labels=labels1}
+
+    let get {D.indices; D.features; D.labels} i =
+        {D.indices=[i]; D.features; D.labels}
 
     let fold_left f s examples =
-        let f' acc i =
-            f acc (get examples i)
-        in
+        let f' acc i = f acc (get examples i) in
         List.fold_left f' s examples.indices
-
-
 end

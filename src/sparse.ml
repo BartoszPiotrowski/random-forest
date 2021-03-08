@@ -12,7 +12,7 @@ type examples = {
     indices : indices;
     features : features;
     labels : labels option}
-type rule = example -> bool
+type rule = example_features -> bool
 type split_rule = examples -> examples * examples
 
 let label_of_string = int_of_string
@@ -81,7 +81,7 @@ let random_features examples n =
     loop [] n
 
 let random_rule examples =
-    fun {features; label} -> ISet.mem (random_feature examples) features
+    ISet.mem (random_feature examples)
 
 let split_impur impur rule {indices; features; labels} =
     let labels =
@@ -120,6 +120,6 @@ let gini_rule ?m:(m=0) examples =
         match feas_impurs_sorted with
         | [] -> raise Empty_list
         | (f, _) :: _ -> f in
-    fun {features; label} -> ISet.mem best_fea features
+    fun example -> ISet.mem best_fea example
 
 let print_label l = l |> printf "%n\n"
