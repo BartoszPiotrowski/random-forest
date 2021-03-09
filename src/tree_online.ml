@@ -19,7 +19,7 @@ module type DATA = sig
     val gini_rule : ?m:int -> examples -> rule
     val length : examples -> int
 (*     val label : examples -> label option *)
-    val add : examples -> example_features * label -> examples * examples
+(*     val add : examples -> example_features * label -> examples * examples *)
     val random_example : examples -> examples
     val fold_left : ('a -> examples -> 'a) -> 'a -> examples -> 'a
     val print : examples -> unit
@@ -53,12 +53,8 @@ module Make = functor (Data : DATA) -> struct
 *)
 
     let extend examples =
-        let t = Sys.time () in
         let labels = Data.labels examples in
-        let () = Printf.printf "labels %.5f s\n%!" (Sys.time() -. t) in
-        let t = Sys.time () in
         let imp = Impurity.gini_impur labels in
-        let () = Printf.printf "impur %.5f s\n%!" (Sys.time() -. t) in
         imp > 0.5
 
     (* TODO more sophisticated condition needed *)

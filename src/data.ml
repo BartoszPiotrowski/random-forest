@@ -39,7 +39,7 @@ module Make = functor (D : DATA_CONCRETE) -> struct
     let labels {D.indices; D.features; D.labels} =
         match labels with
         | None -> failwith "no labels"
-        | Some (l) -> Array.to_list l
+        | Some labels -> List.map (fun i -> labels.(i)) indices
 
     let print examples =
         let inds = indices examples in
@@ -97,9 +97,13 @@ module Make = functor (D : DATA_CONCRETE) -> struct
         {D.indices=[i]; D.features=features; D.labels=labels}
 
     let add examples example =
-        let max_i = Utils.max_list examples.indices in
-        let new_indices = (max_i + 1) :: examples.indices in
+(*
+        let max_i = try Utils.max_list examples.indices
+            with Failure _ -> 0 in
+*)
+        let new_index = List.length examples.indices in
         let features, label = example in
+        let new_indices = new_index :: examples.indices in
         let new_features =
             Array.append [|features|] examples.features in
         let new_labels =
@@ -110,10 +114,11 @@ module Make = functor (D : DATA_CONCRETE) -> struct
         in
         (
             {
-                D.indices = [max_i];
+                D.indices = [new_index];
                 D.features = new_features;
                 D.labels = new_labels
-            },
+            }
+        ,
             {
                 D.indices = new_indices;
                 D.features = new_features;
@@ -123,8 +128,10 @@ module Make = functor (D : DATA_CONCRETE) -> struct
 
     let append {D.indices=indices1; D.features=features1; D.labels=labels1}
                {D.indices=indices2; D.features=features2; D.labels=labels2} =
-    assert (features1 == features2);
-    assert (labels1 == labels2);
+(*     let () = Printf.printf " len 1 %n \n%!" (Array.length features1) in *)
+(*     let () = Printf.printf " len 2 %n \n%!" (Array.length features2) in *)
+(*     assert (features1 == features2); *)
+(*     assert (labels1 == labels2); *)
     let new_indices = List.append indices1 indices2 in
     {D.indices=new_indices; D.features=features1; D.labels=labels1}
 

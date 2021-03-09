@@ -7,7 +7,7 @@ type label = int
 type labels = label array
 type example_features = ISet.t
 type features = example_features array
-type example = {features : example_features; label : label option}
+(* type example = {features : example_features; label : label option} *)
 type examples = {
     indices : indices;
     features : features;
@@ -53,11 +53,6 @@ let print_example {indices; features; labels} n =
         | None -> ()
         | Some labels -> printf "# %n\n%!" labels.(n)
 
-let print_example_2 {features; label} =
-    ISet.iter (fun f -> printf "%n %!" f) features;
-    match label with
-        | None -> ()
-        | Some l -> printf "# %n\n%!" l
 
 (*
 let random_feature {indices; features; _} =
