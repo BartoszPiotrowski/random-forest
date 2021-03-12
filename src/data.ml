@@ -1,6 +1,12 @@
 open Printf
 module ISet = Set.Make(Int)
 
+type label = int
+type features = ISet.t
+type example = (features * (label option))
+type examples = example list
+type rule = features -> bool
+type split_rule = examples -> examples * examples
 
 let load_features file =
     let lines = Utils.read_lines file in
@@ -30,7 +36,7 @@ let label (features, label) =
     | Some l -> l
 
 let labels examples =
-    List.map (fun (f, l) -> l) examples
+    List.map label examples
 
 let features (features, label) =
     features
@@ -74,6 +80,66 @@ let random_features examples n =
         | n -> loop ((random_feature examples) :: acc) (n - 1) in
     loop [] n
 
+
+
+let empty = []
+
+let is_empty examples =
+    examples = []
+
+let indices examples =
+    List.init (List.length examples) (fun i -> i)
+
+let first_label examples =
+    let l = match examples with
+    | (f, l) :: _ -> l
+    | [] -> failwith "empty examples" in
+    match l with
+    | None -> failwith "unlabeled example"
+    | Some l -> l
+
+let random_label examples =
+    let (f, l) = Utils.choose_random examples in
+    match l with
+    | None -> failwith "unlabeled example"
+    | Some l -> l
+
+let random_subset examples =
+    Utils.sample_with_replace examples (length examples)
+
+let uniform_labels examples =
+    let labels = labels examples in
+    let rec uniform labels =
+        match labels with
+        | [] | [_] -> true
+        | h1 :: h2 :: t ->
+            if h1 = h2 then uniform (h2 :: t) else false in
+    uniform labels
+
+let split rule examples =
+    let rec loop examples_l examples_r = function
+        | [] -> (examples_l, examples_r)
+        | e :: t ->
+            match rule (features e) with
+            | true -> loop (e :: examples_l) examples_r t
+            | false -> loop examples_l (e :: examples_r) t in
+    loop [] [] examples
+
+let length examples =
+    List.length examples
+
+let random_example examples =
+    Utils.choose_random examples
+
+let add examples example =
+    example :: examples
+
+let get examples i =
+    List.nth examples i
+
+let fold_left f s examples =
+    List.fold_left f s examples
+
 let random_rule examples =
     ISet.mem (random_feature examples)
 
@@ -110,54 +176,3 @@ let gini_rule ?m:(m=0) examples =
         | [] -> raise Empty_list
         | (f, _) :: _ -> f in
     fun example -> ISet.mem best_fea example
-
-let empty = []
-
-let is_empty examples =
-    examples = []
-
-let first_label = function
-    | (f, l) :: _ -> l
-    | [] -> failwith "empty examples" ;;
-
-let indices examples =
-    List.init (List.length examples) (fun i -> i)
-
-let random_label examples =
-    let (f, l) = Utils.choose_random examples in l
-
-let random_subset examples =
-    Utils.sample_with_replace examples
-
-let uniform_labels examples =
-    let labels = labels examples in
-    let rec uniform labels =
-        match labels with
-        | [] | [_] -> true
-        | h1 :: h2 :: t ->
-            if h1 = h2 then uniform (h2 :: t) else false in
-    uniform labels
-
-let split rule examples =
-    let rec loop examples_l examples_r = function
-        | [] -> (examples_l, examples_r)
-        | e :: t ->
-            match rule (features e) with
-            | true -> loop (e :: examples_l) examples_r t
-            | false -> loop examples_l (e :: examples_r) t in
-    loop [] [] examples
-
-let length examples =
-    List.length examples
-
-let random_example examples =
-    Utils.choose_random examples
-
-let append examples1 examples2 =
-    List.append examples1 examples2
-
-let get examples i =
-    List.nth examples i
-
-let fold_left f s examples =
-    List.fold_left f s examples
