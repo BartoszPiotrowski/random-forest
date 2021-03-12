@@ -1,21 +1,20 @@
 
 module type DATA_CONCRETE = sig
-    type example_features
-    type label
+    type label = int
+    type features
     type indices = int list
-    type features = example_features array
-    type labels = label array
+    type example = (features * (label option))
     type examples = {
-        indices : indices;
-        features : features;
-        labels : labels option}
-    type rule = example_features -> bool
+        indices : int list;
+        universe : (int, example) Hashtbl.t}
+    type rule = features -> bool
     type split_rule = examples -> examples * examples
     val labels : examples -> label list
-    val load_labels : string -> labels
-    val load_features : string -> features
-    val print_example : examples -> int -> unit
-(*     val print_example_2 : example -> unit *)
+    val features : example -> features
+    val label : example -> label
+    val load_labels : string -> label list
+    val load_features : string -> features list
+(*     val print_example : examples -> int -> unit *)
     val print_label : label -> unit
     val random_rule : examples -> rule
     val gini_rule : ?m:int -> examples -> rule
@@ -25,123 +24,92 @@ module Make = functor (D : DATA_CONCRETE) -> struct
     include D
 
     let load ?labels features =
-        let features = D.load_features features
-        and labels = match labels with
-        | None -> None
-        | Some labels -> Some (D.load_labels labels) in
-        let n = Array.length features in
-        let indices = List.init n (fun x -> x) in
-        {D.indices; D.features; D.labels}
+        let features = D.load_features features in
+        let labels = match labels with
+        | None -> List.map (fun _ -> None) features
+        | Some labels -> List.map (fun l -> Some l) (D.load_labels labels) in
+        let features_labels = List.combine features labels in
+        let universe = Hashtbl.create 10000 in
+        let indices = List.map
+            (fun (f, l) ->
+                let e = (f, l) in
+                let h = Hashtbl.hash e in
+                Hashtbl.add universe h e; h)
+            features_labels in
+        {indices; universe}
 
-    let indices {D.indices; D.features; _} =
+    let indices {D.indices; D.universe} =
         indices
 
-    let labels {D.indices; D.features; D.labels} =
-        match labels with
-        | None -> failwith "no labels"
-        | Some labels -> List.map (fun i -> labels.(i)) indices
-
+(*
     let print examples =
         let inds = indices examples in
         List.iter (D.print_example examples) inds
+*)
 
     let empty =
-        {D.indices=[]; D.features=[||]; D.labels=Some [||]}
+        let universe = Hashtbl.create 10000 in
+        {D.indices=[]; D.universe=universe}
 
-    let is_empty {D.indices; D.features; D.labels} =
+    let is_empty {indices; universe} =
         indices = []
 
-    let first_label {D.indices; D.features; D.labels} =
-        match indices, labels with
-        | _, None -> failwith "unlabeled examples"
-        | [], _ -> failwith "empty examples"
-        | h :: t, Some labels -> labels.(h)
+    let first_label {D.indices; D.universe} =
+        let i = match indices with
+        | i :: _ -> i
+        | [] -> failwith "empty examples" in
+        label (Hashtbl.find universe i)
 
-    let random_label {D.indices; D.features; D.labels} =
-        match labels with
-        | None -> failwith "unlabeled examples"
-        | Some labels -> let i = Utils.choose_random indices in labels.(i)
+    let random_label {D.indices; D.universe} =
+        let i = Utils.choose_random indices in
+        label (Hashtbl.find universe i)
 
-    let random_subset {D.indices; D.features; D.labels} =
+    let random_subset {D.indices; D.universe} =
         let random_indices =
             Utils.sample_with_replace indices (List.length indices) in
-        {D.indices=random_indices; D.features; D.labels}
+        {D.indices=random_indices; D.universe}
 
-    let uniform_labels {D.indices; D.features; D.labels} =
-        match labels with
-        | None -> failwith "unlabeled examples"
-        | Some labels ->
-            let rec uniform inds =
-                match inds with
-                | [] | [_] -> true
-                | h1 :: h2 :: t ->
-                    if labels.(h1) = labels.(h2) then uniform (h2 :: t) else false in
-            uniform indices
+    let uniform_labels examples =
+        let labels = labels examples in
+        let rec uniform labels =
+            match labels with
+            | [] | [_] -> true
+            | h1 :: h2 :: t ->
+                if h1 = h2 then uniform (h2 :: t) else false in
+        uniform labels
 
-    let split rule {D.indices; D.features; D.labels} =
+    let split rule {D.indices; D.universe} =
         let rec loop inds_l inds_r = function
             | [] -> (inds_l, inds_r)
             | h :: t ->
-                match rule features.(h) with
+                match rule (features (Hashtbl.find universe h)) with
                 | true -> loop (h :: inds_l) inds_r t
                 | false -> loop inds_l (h :: inds_r) t in
         let inds_l, inds_r = loop [] [] indices in
-        ({D.indices = inds_l; D.features; D.labels},
-         {D.indices = inds_r; D.features; D.labels})
+        ({D.indices = inds_l; D.universe},
+         {D.indices = inds_r; D.universe})
 
-    let length {D.indices; D.features; D.labels} =
+    let length {D.indices; D.universe} =
         List.length indices
 
-    let random_example {D.indices; D.features; D.labels} =
+    let random_example {D.indices; D.universe} =
         let i = Utils.choose_random indices in
-        {D.indices=[i]; D.features=features; D.labels=labels}
+        {D.indices=[i]; D.universe=universe}
 
-    let add examples example =
-(*
-        let max_i = try Utils.max_list examples.indices
-            with Failure _ -> 0 in
-*)
-        let new_index = List.length examples.indices in
-        let features, label = example in
-        let new_indices = new_index :: examples.indices in
-        let new_features =
-            Array.append [|features|] examples.features in
-        let new_labels =
-            match examples.labels with
-            | None -> failwith "cannot add labeled example to unlabeled examples"
-            | Some ls -> Some (Array.append ls [|label|])
-               (* previously (Array.append [|label|] ls) TODO investigate*)
-        in
-        (
-            {
-                D.indices = [new_index];
-                D.features = new_features;
-                D.labels = new_labels
-            }
-        ,
-            {
-                D.indices = new_indices;
-                D.features = new_features;
-                D.labels = new_labels
-            }
-        )
+    let add {D.indices; D.universe} (features, label) =
+        let example = (features, Some label) in
+        let i = Hashtbl.hash example in
+        Hashtbl.add universe i example;
+        {D.indices = [i]; D.universe = universe}
 
-    let append {D.indices=indices1; D.features=features1; D.labels=labels1}
-               {D.indices=indices2; D.features=features2; D.labels=labels2} =
-(*     let () = Printf.printf " len 1 %n \n%!" (Array.length features1) in *)
-(*     let () = Printf.printf " len 2 %n \n%!" (Array.length features2) in *)
-(*     assert (features1 == features2); *)
-(*     assert (labels1 == labels2); *)
+    let append {D.indices=indices1; D.universe=universe1}
+               {D.indices=indices2; D.universe=universe2} =
+    assert (universe1 == universe2);
     let new_indices = List.append indices1 indices2 in
-    {D.indices=new_indices; D.features=features1; D.labels=labels1}
+    {D.indices=new_indices; D.universe=universe1}
 
-    let get {D.indices; D.features; D.labels} i =
-        {D.indices=[i]; D.features; D.labels}
-(*
-        match labels with
-        | None -> failwith "unlabeled examples"
-        | Some labels -> (features.(i), labels.(i))
-*)
+    let get {D.indices; D.universe} i =
+        {D.indices=[i]; D.universe}
 
     let fold_left f s examples =
         let f' acc i = f acc (get examples i) in

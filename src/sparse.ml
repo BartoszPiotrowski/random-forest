@@ -1,18 +1,16 @@
 open Printf
+open Hashtbl
 
 module ISet = Set.Make(Int)
 
-type indices = int list
 type label = int
-type labels = label array
-type example_features = ISet.t
-type features = example_features array
-(* type example = {features : example_features; label : label option} *)
+type features = ISet.t
+type indices = int list
+type example = (features * (label option))
 type examples = {
-    indices : indices;
-    features : features;
-    labels : labels option}
-type rule = example_features -> bool
+    indices : int list;
+    universe : (int, example) Hashtbl.t}
+type rule = features -> bool
 type split_rule = examples -> examples * examples
 
 let label_of_string = int_of_string
@@ -26,33 +24,41 @@ let load_features file =
         | h :: t ->
             let features_list = List.map feature_of_string (split h) in
             ISet.of_list features_list :: (loop split_lines t) in
-    Array.of_list (loop [] lines)
+    loop [] lines
 
 let load_labels file =
-    Array.of_list (List.map label_of_string (Utils.read_lines file))
+    List.map label_of_string (Utils.read_lines file)
 
-let labels {indices; features; labels} =
-    match labels with
-    | None -> failwith "unlabeled examples"
-    | Some labels -> List.map (fun i -> labels.(i)) indices
+let label (features, label) =
+    match label with
+    | None -> failwith "unlabeled example"
+    | Some l -> l
 
-let is_empty {indices; features; _} =
-    indices = []
+let labels {indices; universe} =
+    List.map (fun i -> label (find universe i)) indices
 
-let all_features {indices; features; _} =
+let features (features, label) =
+    features
+
+let length {indices; universe} =
+    List.length indices
+
+let all_features {indices; universe} =
     let all = List.fold_left
-        (fun s n -> ISet.union s features.(n)) ISet.empty indices in
+        (fun s i -> ISet.union s (features (find universe i)))
+        ISet.empty indices in
     ISet.elements all
 
 let n_features examples =
     List.length (all_features examples)
 
-let print_example {indices; features; labels} n =
+(*
+let print_example {_; universe} i =
     ISet.iter (fun f -> printf "%n %!" f) features.(n);
     match labels with
         | None -> ()
         | Some labels -> printf "# %n\n%!" labels.(n)
-
+*)
 
 (*
 let random_feature {indices; features; _} =
@@ -60,9 +66,11 @@ let random_feature {indices; features; _} =
     Utils.choose_random (ISet.elements random_example)
 *)
 
-let random_feature {indices; features; _} =
-    let random_example_1 = features.(Utils.choose_random indices) in
-    let random_example_2 = features.(Utils.choose_random indices) in
+let random_feature {indices; universe} =
+    let random_example_1 =
+        features (find universe (Utils.choose_random indices)) in
+    let random_example_2 =
+        features (find universe (Utils.choose_random indices)) in
     let ex_1_minus_ex_2 = ISet.diff random_example_1 random_example_2 in
     if ISet.is_empty ex_1_minus_ex_2 then
         Utils.choose_random (ISet.elements random_example_1)
@@ -78,14 +86,11 @@ let random_features examples n =
 let random_rule examples =
     ISet.mem (random_feature examples)
 
-let split_impur impur rule {indices; features; labels} =
-    let labels =
-        match labels with
-        | None -> failwith "labels required"
-        | Some labels -> labels in
+let split_impur impur rule {indices; universe} =
     let append (left, right) i =
-        if rule features.(i) then (labels.(i) :: left, right)
-        else (left, labels.(i) :: right) in
+        if rule (features (find universe i)) then
+            (label (find universe i) :: left, right)
+        else (left, label (find universe i) :: right) in
     let left, right = List.fold_left append ([], []) indices in
     ((impur left) +. (impur right)) /. 2.
 
@@ -93,8 +98,7 @@ exception Empty_list
 
 (* m -- numbers of features to choose from *)
 let gini_rule ?m:(m=0) examples =
-    let {indices; features; _} = examples in
-    let n = List.length indices in
+    let n = length examples in
     let m = match m with
     | 0 -> n |> float_of_int |> sqrt |> int_of_float
     | m -> m in

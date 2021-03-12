@@ -2,10 +2,11 @@ open Printf
 
 module type DATA = sig
     type indices = int list
+    type example
     type examples
-    type example_features
+    type features
     type label
-    type rule = example_features -> bool
+    type rule = features -> bool
     type split_rule = examples -> examples * examples
     val uniform_labels : examples -> bool
     val indices : examples -> indices
@@ -22,7 +23,7 @@ module type DATA = sig
 (*     val add : examples -> example_features * label -> examples * examples *)
     val random_example : examples -> examples
     val fold_left : ('a -> examples -> 'a) -> 'a -> examples -> 'a
-    val print : examples -> unit
+(*     val print : examples -> unit *)
 (*     val print_example_2 : example -> unit *)
     val labels : examples -> label list
 end
