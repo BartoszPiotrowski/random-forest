@@ -1,117 +1,163 @@
+open Printf
+module ISet = Set.Make(Int)
 
-module type DATA_CONCRETE = sig
-    type label = int
-    type features
-    type indices = int list
-    type example = (features * (label option))
-    type examples = {
-        indices : int list;
-        universe : (int, example) Hashtbl.t}
-    type rule = features -> bool
-    type split_rule = examples -> examples * examples
-    val labels : examples -> label list
-    val features : example -> features
-    val label : example -> label
-    val load_labels : string -> label list
-    val load_features : string -> features list
-(*     val print_example : examples -> int -> unit *)
-    val print_label : label -> unit
-    val random_rule : examples -> rule
-    val gini_rule : ?m:int -> examples -> rule
-end;;
 
-module Make = functor (D : DATA_CONCRETE) -> struct
-    include D
+let load_features file =
+    let lines = Utils.read_lines file in
+    let split = Str.split_delim (Str.regexp " ") in
+    let rec loop split_lines = function
+        | [] -> List.rev split_lines
+        | h :: t ->
+            let features_list = List.map int_of_string (split h) in
+            ISet.of_list features_list :: (loop split_lines t) in
+    loop [] lines
 
-    let load ?labels features =
-        let features = D.load_features features in
-        let labels = match labels with
-        | None -> List.map (fun _ -> None) features
-        | Some labels -> List.map (fun l -> Some l) (D.load_labels labels) in
-        let features_labels = List.combine features labels in
-        let universe = Hashtbl.create 10000 in
-        let indices = List.map
-            (fun (f, l) ->
-                let e = (f, l) in
-                let h = Hashtbl.hash e in
-                Hashtbl.add universe h e; h)
-            features_labels in
-        {indices; universe}
+let load_labels file =
+    List.map int_of_string (Utils.read_lines file)
 
-    let indices {D.indices; D.universe} =
-        indices
+let print_label l = l |> printf "%n\n"
+
+let load ?labels features =
+    let features = load_features features in
+    let labels = match labels with
+    | None -> List.map (fun _ -> None) features
+    | Some labels -> List.map (fun l -> Some l) (load_labels labels) in
+    List.combine features labels
+
+let label (features, label) =
+    match label with
+    | None -> failwith "unlabeled example"
+    | Some l -> l
+
+let labels examples =
+    List.map (fun (f, l) -> l) examples
+
+let features (features, label) =
+    features
+
+let length = List.length
+
+let all_features examples =
+    let all = List.fold_left
+        (fun s e -> ISet.union s (features e)) ISet.empty examples in
+    ISet.elements all
+
+let n_features examples =
+    List.length (all_features examples)
 
 (*
-    let print examples =
-        let inds = indices examples in
-        List.iter (D.print_example examples) inds
+let print_example {_; universe} i =
+    ISet.iter (fun f -> printf "%n %!" f) features.(n);
+    match labels with
+        | None -> ()
+        | Some labels -> printf "# %n\n%!" labels.(n)
 *)
 
-    let empty =
-        let universe = Hashtbl.create 10000 in
-        {D.indices=[]; D.universe=universe}
+(*
+let random_feature {indices; features; _} =
+    let random_example = features.(Utils.choose_random indices) in
+    Utils.choose_random (ISet.elements random_example)
+*)
 
-    let is_empty {indices; universe} =
-        indices = []
+let random_feature examples =
+    let random_example_1 = features (Utils.choose_random examples) in
+    let random_example_2 = features (Utils.choose_random examples) in
+    let ex_1_minus_ex_2 = ISet.diff random_example_1 random_example_2 in
+    if ISet.is_empty ex_1_minus_ex_2 then
+        Utils.choose_random (ISet.elements random_example_1)
+    else
+        Utils.choose_random (ISet.elements ex_1_minus_ex_2)
 
-    let first_label {D.indices; D.universe} =
-        let i = match indices with
-        | i :: _ -> i
-        | [] -> failwith "empty examples" in
-        label (Hashtbl.find universe i)
+let random_features examples n =
+    let rec loop acc = function
+        | 0 -> acc
+        | n -> loop ((random_feature examples) :: acc) (n - 1) in
+    loop [] n
 
-    let random_label {D.indices; D.universe} =
-        let i = Utils.choose_random indices in
-        label (Hashtbl.find universe i)
+let random_rule examples =
+    ISet.mem (random_feature examples)
 
-    let random_subset {D.indices; D.universe} =
-        let random_indices =
-            Utils.sample_with_replace indices (List.length indices) in
-        {D.indices=random_indices; D.universe}
+let split_impur impur rule examples =
+    let append (left, right) e =
+        if rule (features e) then
+            (label e :: left, right) else (left, label e :: right) in
+    let left, right = List.fold_left append ([], []) examples in
+    ((impur left) +. (impur right)) /. 2.
 
-    let uniform_labels examples =
-        let labels = labels examples in
-        let rec uniform labels =
-            match labels with
-            | [] | [_] -> true
-            | h1 :: h2 :: t ->
-                if h1 = h2 then uniform (h2 :: t) else false in
-        uniform labels
+exception Empty_list
 
-    let split rule {D.indices; D.universe} =
-        let rec loop inds_l inds_r = function
-            | [] -> (inds_l, inds_r)
-            | h :: t ->
-                match rule (features (Hashtbl.find universe h)) with
-                | true -> loop (h :: inds_l) inds_r t
-                | false -> loop inds_l (h :: inds_r) t in
-        let inds_l, inds_r = loop [] [] indices in
-        ({D.indices = inds_l; D.universe},
-         {D.indices = inds_r; D.universe})
+(* m -- numbers of features to choose from *)
+let gini_rule ?m:(m=0) examples =
+    let n = length examples in
+    let m = match m with
+    | 0 -> n |> float_of_int |> sqrt |> int_of_float
+    | m -> m in
+    let random_feas = random_features examples m in
+    let rec loop features impurs =
+        match features with
+        | [] -> List.rev impurs
+        | h :: t ->
+            let rule = fun e -> ISet.mem h e in
+            let impur = split_impur Impurity.gini_impur rule examples in
+            loop t (impur :: impurs) in
+    let impurs = loop random_feas [] in
+    let feas_impurs = List.combine random_feas impurs in
+    let im (_, i) = i in
+    let feas_impurs_sorted =
+        List.sort (fun a b -> compare (im a) (im b)) feas_impurs in
+    let best_fea =
+        match feas_impurs_sorted with
+        | [] -> raise Empty_list
+        | (f, _) :: _ -> f in
+    fun example -> ISet.mem best_fea example
 
-    let length {D.indices; D.universe} =
-        List.length indices
+let empty = []
 
-    let random_example {D.indices; D.universe} =
-        let i = Utils.choose_random indices in
-        {D.indices=[i]; D.universe=universe}
+let is_empty examples =
+    examples = []
 
-    let add {D.indices; D.universe} (features, label) =
-        let example = (features, Some label) in
-        let i = Hashtbl.hash example in
-        Hashtbl.add universe i example;
-        {D.indices = [i]; D.universe = universe}
+let first_label = function
+    | (f, l) :: _ -> l
+    | [] -> failwith "empty examples" ;;
 
-    let append {D.indices=indices1; D.universe=universe1}
-               {D.indices=indices2; D.universe=universe2} =
-    assert (universe1 == universe2);
-    let new_indices = List.append indices1 indices2 in
-    {D.indices=new_indices; D.universe=universe1}
+let indices examples =
+    List.init (List.length examples) (fun i -> i)
 
-    let get {D.indices; D.universe} i =
-        {D.indices=[i]; D.universe}
+let random_label examples =
+    let (f, l) = Utils.choose_random examples in l
 
-    let fold_left f s examples =
-        let f' acc i = f acc (get examples i) in
-        List.fold_left f' s examples.indices
-end
+let random_subset examples =
+    Utils.sample_with_replace examples
+
+let uniform_labels examples =
+    let labels = labels examples in
+    let rec uniform labels =
+        match labels with
+        | [] | [_] -> true
+        | h1 :: h2 :: t ->
+            if h1 = h2 then uniform (h2 :: t) else false in
+    uniform labels
+
+let split rule examples =
+    let rec loop examples_l examples_r = function
+        | [] -> (examples_l, examples_r)
+        | e :: t ->
+            match rule (features e) with
+            | true -> loop (e :: examples_l) examples_r t
+            | false -> loop examples_l (e :: examples_r) t in
+    loop [] [] examples
+
+let length examples =
+    List.length examples
+
+let random_example examples =
+    Utils.choose_random examples
+
+let append examples1 examples2 =
+    List.append examples1 examples2
+
+let get examples i =
+    List.nth examples i
+
+let fold_left f s examples =
+    List.fold_left f s examples
