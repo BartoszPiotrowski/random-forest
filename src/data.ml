@@ -5,8 +5,8 @@ type label = int
 type features = ISet.t
 type example = (features * (label option))
 type examples = example list
-type rule = features -> bool
-type split_rule = examples -> examples * examples
+type direction = Left | Right
+type rule = features -> direction
 
 let load_features file =
     let lines = Utils.read_lines file in
@@ -80,10 +80,6 @@ let random_features examples n =
         | n -> loop ((random_feature examples) :: acc) (n - 1) in
     loop [] n
 
-
-
-let empty = []
-
 let is_empty examples =
     examples = []
 
@@ -121,8 +117,8 @@ let split rule examples =
         | [] -> (examples_l, examples_r)
         | e :: t ->
             match rule (features e) with
-            | true -> loop (e :: examples_l) examples_r t
-            | false -> loop examples_l (e :: examples_r) t in
+            | Left -> loop (e :: examples_l) examples_r t
+            | Right -> loop examples_l (e :: examples_r) t in
     loop [] [] examples
 
 let length examples =
@@ -134,14 +130,14 @@ let random_example examples =
 let add examples example =
     example :: examples
 
-let get examples i =
-    List.nth examples i
-
 let fold_left f s examples =
     List.fold_left f s examples
 
 let random_rule examples =
-    ISet.mem (random_feature examples)
+    fun example ->
+        match ISet.mem (random_feature examples) example with
+        | true -> Left
+        | false -> Right
 
 let split_impur impur rule examples =
     let append (left, right) e =
@@ -175,4 +171,7 @@ let gini_rule ?m:(m=0) examples =
         match feas_impurs_sorted with
         | [] -> raise Empty_list
         | (f, _) :: _ -> f in
-    fun example -> ISet.mem best_fea example
+    fun example ->
+        match ISet.mem best_fea example with
+        | true -> Left
+        | false -> Right

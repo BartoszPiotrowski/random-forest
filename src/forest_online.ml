@@ -46,10 +46,8 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         | ([x], _) -> x
         | (l, _) -> Utils.choose_random l
 
-    let classify forest examples =
-(*      let votes = List.map (Tree.classify examples) forest in *)
-        let votes = Parmap.parmap (Tree.classify examples) (Parmap.L forest) in
-(*         let inds = Data.indices examples in *)
-        let inds = List.init (Data.length examples) (fun i -> i) in
-        List.map (fun i -> vote (List.map (fun x -> List.nth x i) votes)) inds
+    let classify forest example =
+        let votes = List.map (Tree.classify example) forest in
+(*      let votes = Parmap.parmap (Tree.classify example) (Parmap.L forest) in *)
+        vote votes
 end
