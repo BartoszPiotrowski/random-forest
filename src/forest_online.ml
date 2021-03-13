@@ -24,6 +24,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         List.map (fun _ -> tree (Data.random_subset examples)) initseg
 *)
 
+(*
     let vote votes =
         let tbl = Hashtbl.create 10 in (* about 10 classes assumed *)
         let update cl =
@@ -45,9 +46,28 @@ module Make = functor (Data : Tree_online.DATA) -> struct
             failwith "At least one class needs to have maximal frequency."
         | ([x], _) -> x
         | (l, _) -> Utils.choose_random l
+*)
+
+    let scores votes =
+        let sorted = List.sort compare votes in
+        let rec loop occ sorted =
+            match sorted, occ with
+            | [], _ -> occ
+            | h :: t, [] -> loop [(h, 1)] t
+            | h :: t, (e, c) :: t2 ->
+                if h = e
+                then loop ((e, c + 1) :: t2) t
+                else loop ((h, 1) :: t2) t
+        in
+        let occurs = loop [] sorted in
+        let sum = float_of_int (List.length votes) in
+        let freqs =
+            List.map (fun (e, c) -> (e, (float_of_int c) /. sum)) occurs in
+        List.sort (fun (_, c1) (_, c2) -> compare c2 c1) freqs
+
 
     let classify forest example =
         let votes = List.map (Tree.classify example) forest in
 (*      let votes = Parmap.parmap (Tree.classify example) (Parmap.L forest) in *)
-        vote votes
+    let (e, _) :: _ = scores votes in e
 end
