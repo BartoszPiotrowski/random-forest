@@ -19,6 +19,7 @@ module type DATA = sig
     val fold_left : ('a -> example -> 'a) -> 'a -> examples -> 'a
     val label : example -> label
     val labels : examples -> label list
+    val print_label : label -> unit
 end
 
 module Make = functor (Data : DATA) -> struct

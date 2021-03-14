@@ -48,7 +48,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         | (l, _) -> Utils.choose_random l
 *)
 
-    let scores votes =
+    let vote votes =
         let sorted = List.sort compare votes in
         let rec loop occ sorted =
             match sorted, occ with
@@ -57,7 +57,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
             | h :: t, (e, c) :: t2 ->
                 if h = e
                 then loop ((e, c + 1) :: t2) t
-                else loop ((h, 1) :: t2) t
+                else loop ((h, 1) :: (e, c) :: t2) t
         in
         let occurs = loop [] sorted in
         let sum = float_of_int (List.length votes) in
@@ -65,9 +65,13 @@ module Make = functor (Data : Tree_online.DATA) -> struct
             List.map (fun (e, c) -> (e, (float_of_int c) /. sum)) occurs in
         List.sort (fun (_, c1) (_, c2) -> compare c2 c1) freqs
 
-
     let classify forest example =
         let votes = List.map (Tree.classify example) forest in
-(*      let votes = Parmap.parmap (Tree.classify example) (Parmap.L forest) in *)
-    let (e, _) :: _ = scores votes in e
+        match vote votes with
+        | (e, _) :: _ -> e
+        | [] -> failwith "empty list of voting scores"
+
+    let score forest example =
+        let votes = List.map (Tree.classify example) forest in
+        vote votes
 end
