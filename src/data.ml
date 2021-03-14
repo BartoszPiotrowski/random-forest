@@ -1,34 +1,11 @@
 open Printf
 module ISet = Set.Make(Int)
 
-type label = int
 type features = ISet.t
-type example = (features * (label option))
-type examples = example list
+type 'a example = (features * ('a option))
+type 'a examples = 'a example list
 type direction = Left | Right
 type rule = features -> direction
-
-let load_features file =
-    let lines = Utils.read_lines file in
-    let split = Str.split_delim (Str.regexp " ") in
-    let rec loop split_lines = function
-        | [] -> List.rev split_lines
-        | h :: t ->
-            let features_list = List.map int_of_string (split h) in
-            ISet.of_list features_list :: (loop split_lines t) in
-    loop [] lines
-
-let load_labels file =
-    List.map int_of_string (Utils.read_lines file)
-
-let print_label l = l |> printf "%n\n"
-
-let load ?labels features =
-    let features = load_features features in
-    let labels = match labels with
-    | None -> List.map (fun _ -> None) features
-    | Some labels -> List.map (fun l -> Some l) (load_labels labels) in
-    List.combine features labels
 
 let label (features, label) =
     match label with
@@ -37,6 +14,12 @@ let label (features, label) =
 
 let labels examples =
     List.map label examples
+
+let unlabeled features =
+    (ISet.of_list features, None)
+
+let labeled (features, label) =
+    (ISet.of_list features, Some label)
 
 let features (features, label) =
     features
@@ -50,14 +33,6 @@ let all_features examples =
 
 let n_features examples =
     List.length (all_features examples)
-
-(*
-let print_example {_; universe} i =
-    ISet.iter (fun f -> printf "%n %!" f) features.(n);
-    match labels with
-        | None -> ()
-        | Some labels -> printf "# %n\n%!" labels.(n)
-*)
 
 (*
 let random_feature {indices; features; _} =

@@ -37,8 +37,8 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         | (e, _) :: _ -> e
         | [] -> failwith "empty list of voting scores"
 
-    let score forest example =
-        let votes = List.map (Tree.classify example) forest in
+    let score forest unlabeled_example =
+        let votes = List.map (Tree.classify unlabeled_example) forest in
         vote votes
 
 end
