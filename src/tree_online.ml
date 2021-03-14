@@ -5,21 +5,16 @@ module type DATA = sig
     type examples = example list
     type direction = Left | Right
     type rule = features -> direction
-    val uniform_labels : examples -> bool
     val is_empty : examples -> bool
     val add : examples -> example -> examples
     val random_label : examples -> label
-    val first_label : examples -> label
-    val random_subset : examples -> examples
     val features : example -> features
     val split : rule -> examples -> examples * examples
     val gini_rule : ?m:int -> examples -> rule
-    val length : examples -> int
     val random_example : examples -> example
     val fold_left : ('a -> example -> 'a) -> 'a -> examples -> 'a
     val label : example -> label
     val labels : examples -> label list
-    val print_label : label -> unit
 end
 
 module Make = functor (Data : DATA) -> struct
@@ -40,11 +35,6 @@ module Make = functor (Data : DATA) -> struct
         else Node(rule,
             Leaf(Data.random_label examples_l, examples_l),
             Leaf(Data.random_label examples_r, examples_r))
-
-(*
-    let extend examples =
-        if Data.length examples > 10 then true else false
-*)
 
     let extend examples =
         let labels = Data.labels examples in
