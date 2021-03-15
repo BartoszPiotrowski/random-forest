@@ -1,3 +1,6 @@
+tmp
+aux
+
 *.annot
 *.cmo
 *.cma
@@ -10,6 +13,7 @@
 
 # ocamlbuild working directory
 _build/
+*.build*
 
 # ocamlbuild targets
 *.byte
