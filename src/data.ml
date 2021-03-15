@@ -150,3 +150,4 @@ let gini_rule ?m:(m=0) examples =
         match ISet.mem best_fea example with
         | true -> Left
         | false -> Right
+
