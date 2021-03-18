@@ -124,11 +124,8 @@ let split_impur impur rule examples =
 exception Empty_list
 
 (* m -- numbers of features to choose from *)
-let gini_rule ?m:(m=0) examples =
-    let n = length examples in
-    let m = match m with
-    | 0 -> n |> float_of_int |> sqrt |> int_of_float
-    | m -> m in
+let gini_rule examples =
+    let m = length examples in (* more examples = more features to consider *)
     let random_feas = random_features examples m in
     let rec loop features impurs =
         match features with
@@ -139,13 +136,13 @@ let gini_rule ?m:(m=0) examples =
             loop t (impur :: impurs) in
     let impurs = loop random_feas [] in
     let feas_impurs = List.combine random_feas impurs in
-    let im (_, i) = i in
-    let feas_impurs_sorted =
-        List.sort (fun a b -> compare (im a) (im b)) feas_impurs in
-    let best_fea =
-        match feas_impurs_sorted with
+    let f_start, i_start =
+        match feas_impurs with
         | [] -> raise Empty_list
-        | (f, _) :: _ -> f in
+        | (f, i) :: _ -> (f, i) in
+    let best_fea, best_impur = List.fold_left
+        (fun (f_b, i_b) (f, i) -> if i_b > i then (f, i) else (f_b, i_b))
+        (f_start, i_start) feas_impurs in
     fun example ->
         match ISet.mem best_fea example with
         | true -> Left
