@@ -40,6 +40,28 @@ let random_feature {indices; features; _} =
     Utils.choose_random (ISet.elements random_example)
 *)
 
+exception All_equal
+exception Empty_examples
+
+let random_feature examples =
+    let feas = match examples with
+    | [] -> raise Empty_examples
+    | h :: t  ->
+        let rec loop l =
+            match l with
+            | [] -> raise All_equal
+            | h' :: t ->
+                if (label h) = (label h') then loop t else
+                if ISet.equal (features h) (features h') then loop t else h' in
+        try let h' = loop t in
+            let diff = ISet.diff (features h) (features h') in
+            if ISet.is_empty diff then ISet.diff (features h') (features h)
+            else diff
+        with All_equal -> features h
+    in Utils.choose_random (ISet.elements feas) ;;
+
+
+(*
 let random_feature examples =
     let random_example_1 = features (Utils.choose_random examples) in
     let random_example_2 = features (Utils.choose_random examples) in
@@ -52,6 +74,7 @@ let random_feature examples =
     else
 (*         let () = Printf.printf "good\n" in *)
         Utils.choose_random (ISet.elements diff)
+*)
 
 let random_features examples n =
     let rec loop acc = function
