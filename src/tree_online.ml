@@ -25,7 +25,6 @@ module Make = functor (Data : DATA) -> struct
     let leaf example =
         Leaf (Data.label example, [example])
 
-(*
     let make_new_node examples =
         let impur_diff, rule = Data.gini_rule examples in
         let () = Printf.printf "%f\n%!" impur_diff in
@@ -38,28 +37,12 @@ module Make = functor (Data : DATA) -> struct
                 Leaf(Data.random_label examples_r, examples_r))
         else
             Leaf(Data.random_label examples, examples)
-*)
 
-    let make_new_node examples =
+    let prelim_conds examples depth =
         let labels = Data.labels examples in
         let imp = Impurity.gini_impur labels in
-        if imp > 0.5 then
-            let _, rule = Data.gini_rule examples in
-            let examples_l, examples_r = Data.split rule examples in
-            if Data.is_empty examples_l || Data.is_empty examples_r
-            then Leaf(Data.random_label examples, examples)
-            else Node(rule,
-                Leaf(Data.random_label examples_l, examples_l),
-                Leaf(Data.random_label examples_r, examples_r))
-        else
-            Leaf(Data.random_label examples, examples)
-
-(*
-    let extend examples =
-        let labels = Data.labels examples in
-        let imp = Impurity.gini_impur labels in
-        imp > 0.5
-*)
+        imp > 0.5 && depth < 100
+(*         imp > 0.5 && List.length labels > 10 && depth < 100 *)
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
     let add (tree : 'a tree) (example : 'a Data.example) : 'a tree =
@@ -69,11 +52,13 @@ module Make = functor (Data : DATA) -> struct
                 | Left  -> Node(rule, loop (depth + 1) tree_l, tree_r)
                 | Right -> Node(rule, tree_l, loop (depth + 1) tree_r))
             | Leaf (label, examples) ->
-           Printf.printf "depth: %n\n" depth;
-           Printf.printf "#examples: %n\n%!" (List.length examples) ;
                 let examples = Data.add examples example in
-                if depth > 100 then Leaf (label, examples)
-                else make_new_node examples
+                if prelim_conds examples depth then
+                    let () = Printf.printf "depth: %n\n" depth in
+                    let () =
+                    Printf.printf "#examples: %n\n%!" (List.length examples) in
+                    Utils.time make_new_node examples
+                else Leaf (label, examples)
         in
         loop 0 tree
 
