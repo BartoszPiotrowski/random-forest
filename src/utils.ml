@@ -40,6 +40,9 @@ let sample l n =
 let choose_random l =
     List.nth l (Random.int (List.length l))
 
+let choose_2_random l =
+    List.nth l (Random.int (List.length l))
+
 let read_lines file : string list =
   let ic = open_in file in
   let try_read () =

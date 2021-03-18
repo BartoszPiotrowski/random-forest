@@ -3,7 +3,6 @@ let gini_impur x =
     let freqs = Utils.freqs x in
     1. -. List.fold_left (fun s (_, f) -> s +. f ** 2.) 0. freqs
 
-
 (* compute impurity given an impurity function, *sorted* pairs (value, label)
  * and a threshold *)
 (* TODO assert sorted *)

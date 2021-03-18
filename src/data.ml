@@ -43,11 +43,15 @@ let random_feature {indices; features; _} =
 let random_feature examples =
     let random_example_1 = features (Utils.choose_random examples) in
     let random_example_2 = features (Utils.choose_random examples) in
-    let ex_1_minus_ex_2 = ISet.diff random_example_1 random_example_2 in
-    if ISet.is_empty ex_1_minus_ex_2 then
+    let random_example_3 = features (Utils.choose_random examples) in
+    let union = ISet.union random_example_1 random_example_2 in
+    let diff = ISet.diff union random_example_3 in
+    if ISet.is_empty diff then
+(*         let () = Printf.printf "%i empty\n" (List.length examples) in *)
         Utils.choose_random (ISet.elements random_example_1)
     else
-        Utils.choose_random (ISet.elements ex_1_minus_ex_2)
+(*         let () = Printf.printf "good\n" in *)
+        Utils.choose_random (ISet.elements diff)
 
 let random_features examples n =
     let rec loop acc = function
