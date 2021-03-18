@@ -27,6 +27,7 @@ module Make = functor (Data : DATA) -> struct
 
     (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
     let make_new_node examples =
+(*         let () = Printf.printf "make_new_node\n" in *)
         let rule = Data.gini_rule examples in
         let examples_l, examples_r = Data.split rule examples in
         if Data.is_empty examples_l || Data.is_empty examples_r
