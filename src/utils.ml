@@ -77,4 +77,15 @@ let rec remove_last l =
     | [h] -> []
     | h :: t -> h :: (remove_last t)
 
-
+let freqs l =
+    let sorted = List.sort compare l in
+    let rec loop occ sorted =
+        match sorted, occ with
+        | [], _ -> occ
+        | h :: t, [] -> loop [(h, 1)] t
+        | h :: t, (e, c) :: t2 ->
+            if h = e then loop ((e, c + 1) :: t2) t
+            else loop ((h, 1) :: (e, c) :: t2) t in
+    let occurs = loop [] sorted in
+    let sum = float_of_int (List.length l) in
+    List.map (fun (e, c) -> (e, (float_of_int c) /. sum)) occurs

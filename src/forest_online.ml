@@ -17,20 +17,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         Data.fold_left add empty examples
 
     let vote votes =
-        let sorted = List.sort compare votes in
-        let rec loop occ sorted =
-            match sorted, occ with
-            | [], _ -> occ
-            | h :: t, [] -> loop [(h, 1)] t
-            | h :: t, (e, c) :: t2 ->
-                if h = e
-                then loop ((e, c + 1) :: t2) t
-                else loop ((h, 1) :: (e, c) :: t2) t
-        in
-        let occurs = loop [] sorted in
-        let sum = float_of_int (List.length votes) in
-        let freqs =
-            List.map (fun (e, c) -> (e, (float_of_int c) /. sum)) occurs in
+        let freqs = Utils.freqs votes in
         List.sort (fun (_, c1) (_, c2) -> compare c2 c1) freqs
 
     let classify forest example =
