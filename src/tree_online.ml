@@ -8,7 +8,7 @@ module type DATA = sig
     val add : 'a examples -> 'a example -> 'a examples
     val features : 'a example -> features
     val split : rule -> 'a examples -> 'a examples * 'a examples
-    val gini_rule : 'a examples -> rule
+    val gini_rule : 'a examples -> float * rule
     val random_label : 'a examples -> 'a
     val random_example : 'a examples -> 'a example
     val fold_left : ('a -> 'b example -> 'a) -> 'a -> 'b examples -> 'a
@@ -27,19 +27,25 @@ module Make = functor (Data : DATA) -> struct
 
     (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
     let make_new_node examples =
-        let rule = Data.gini_rule examples in
-        let examples_l, examples_r = Data.split rule examples in
-        if Data.is_empty examples_l || Data.is_empty examples_r
-        then Leaf(Data.random_label examples, examples)
-        else Node(rule,
-            Leaf(Data.random_label examples_l, examples_l),
-            Leaf(Data.random_label examples_r, examples_r))
+        let impur_diff, rule = Data.gini_rule examples in
+(*         let () = Printf.printf "%f\n%!" impur_diff in *)
+        if impur_diff > 0.1 then
+            let examples_l, examples_r = Data.split rule examples in
+            if Data.is_empty examples_l || Data.is_empty examples_r
+            then Leaf(Data.random_label examples, examples)
+            else Node(rule,
+                Leaf(Data.random_label examples_l, examples_l),
+                Leaf(Data.random_label examples_r, examples_r))
+        else
+            Leaf(Data.random_label examples, examples)
 
+
+(*
     let extend examples =
         let labels = Data.labels examples in
         let imp = Impurity.gini_impur labels in
         imp > 0.5
-    (* TODO more sophisticated condition needed *)
+*)
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
     let add (tree : 'a tree) (example : 'a Data.example) : 'a tree =
@@ -52,8 +58,7 @@ module Make = functor (Data : DATA) -> struct
 (*            Printf.eprintf "depth: %n\n" depth; *)
 (*            Printf.eprintf "#examples: %n\n%!" (List.length examples) ; *)
                 let examples = Data.add examples example in
-                if extend examples && depth < 1000 then make_new_node examples
-                else Leaf (label, examples)
+                make_new_node examples
         in
         loop 0 tree
 
