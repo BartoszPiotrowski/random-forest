@@ -25,10 +25,9 @@ module Make = functor (Data : DATA) -> struct
     let leaf example =
         Leaf (Data.label example, [example])
 
-    (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
     let make_new_node examples =
         let impur_diff, rule = Data.gini_rule examples in
-(*         let () = Printf.printf "%f\n%!" impur_diff in *)
+        let () = Printf.printf "%f\n%!" impur_diff in
         if impur_diff > 0.1 then
             let examples_l, examples_r = Data.split rule examples in
             if Data.is_empty examples_l || Data.is_empty examples_r
@@ -55,10 +54,11 @@ module Make = functor (Data : DATA) -> struct
                 | Left  -> Node(rule, loop (depth + 1) tree_l, tree_r)
                 | Right -> Node(rule, tree_l, loop (depth + 1) tree_r))
             | Leaf (label, examples) ->
-(*            Printf.eprintf "depth: %n\n" depth; *)
-(*            Printf.eprintf "#examples: %n\n%!" (List.length examples) ; *)
+           Printf.printf "depth: %n\n" depth;
+           Printf.printf "#examples: %n\n%!" (List.length examples) ;
                 let examples = Data.add examples example in
-                make_new_node examples
+                if depth > 100 then Leaf (label, examples)
+                else make_new_node examples
         in
         loop 0 tree
 
