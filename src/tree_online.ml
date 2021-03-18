@@ -25,6 +25,7 @@ module Make = functor (Data : DATA) -> struct
     let leaf example =
         Leaf (Data.label example, [example])
 
+(*
     let make_new_node examples =
         let impur_diff, rule = Data.gini_rule examples in
         let () = Printf.printf "%f\n%!" impur_diff in
@@ -37,7 +38,21 @@ module Make = functor (Data : DATA) -> struct
                 Leaf(Data.random_label examples_r, examples_r))
         else
             Leaf(Data.random_label examples, examples)
+*)
 
+    let make_new_node examples =
+        let labels = Data.labels examples in
+        let imp = Impurity.gini_impur labels in
+        if imp > 0.5 then
+            let _, rule = Data.gini_rule examples in
+            let examples_l, examples_r = Data.split rule examples in
+            if Data.is_empty examples_l || Data.is_empty examples_r
+            then Leaf(Data.random_label examples, examples)
+            else Node(rule,
+                Leaf(Data.random_label examples_l, examples_l),
+                Leaf(Data.random_label examples_r, examples_r))
+        else
+            Leaf(Data.random_label examples, examples)
 
 (*
     let extend examples =
