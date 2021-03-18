@@ -87,5 +87,5 @@ let freqs l =
             if h = e then loop ((e, c + 1) :: t2) t
             else loop ((h, 1) :: (e, c) :: t2) t in
     let occurs = loop [] sorted in
-    let sum = float_of_int (List.length l) in
-    List.map (fun (e, c) -> (e, (float_of_int c) /. sum)) occurs
+    let len = float_of_int (List.length l) in
+    List.map (fun (e, c) -> (e, (float_of_int c) /. len)) occurs
