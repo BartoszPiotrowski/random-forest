@@ -9,8 +9,7 @@ let train_x = ref ""
 let train_y = ref ""
 let test_x = ref ""
 let pred_y = ref ""
-let n = ref 10
-let m = ref 0
+let stats = ref True
 
 let speclist =
     [
@@ -18,6 +17,7 @@ let speclist =
         ("-train_y", Arg.Set_string train_y, "Training data, labels.");
         ("-test_x", Arg.Set_string test_x, "Testing data, features.");
         ("-pred_y", Arg.Set_string pred_y, "Predicted labels for testing data.");
+        ("-stats", Arg.Set_bool stats, "Print stats of the forest.");
     ]
 let usage = "Train an online random forest model and predict for test examples."
 let () = Arg.parse
@@ -45,3 +45,5 @@ let () = printf "Done.\n%!"
 let preds_file = open_out !pred_y
 let () = List.iter (fun p -> fprintf preds_file "%n\n" p) preds
 let () = close_out preds_file
+let () = printf "Stats of the trained forest:\n%!"
+let () = stats forest
