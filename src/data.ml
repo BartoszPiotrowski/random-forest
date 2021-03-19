@@ -40,11 +40,30 @@ let random_feature {indices; features; _} =
     Utils.choose_random (ISet.elements random_example)
 *)
 
-exception No_good_candidate
-exception Empty_examples
 
 let random_feature examples =
-    let ex1 = Utils.choose_random examples in
+    let random_example_1 = features (Utils.choose_random examples) in
+    let random_example_2 = features (Utils.choose_random examples) in
+    let random_example_3 = features (Utils.choose_random examples) in
+    let union = ISet.union random_example_1 random_example_2 in
+    let diff = ISet.diff union random_example_3 in
+    if ISet.is_empty diff then
+(*         let () = Printf.printf "%i empty\n" (List.length examples) in *)
+        Utils.choose_random (ISet.elements random_example_1)
+    else
+(*         let () = Printf.printf "good\n" in *)
+        Utils.choose_random (ISet.elements diff)
+
+let random_features examples n =
+    let rec loop acc = function
+        | 0 -> acc
+        | n -> loop ((random_feature examples) :: acc) (n - 1) in
+    loop [] n
+
+exception Empty_examples
+
+let choose_feature examples example =
+    let ex1 = example in
     let ex2 =
         let rec loop l =
             match l with
@@ -60,26 +79,16 @@ let random_feature examples =
     in Utils.choose_random (ISet.elements feas) ;;
 
 
-(*
-let random_feature examples =
-    let random_example_1 = features (Utils.choose_random examples) in
-    let random_example_2 = features (Utils.choose_random examples) in
-    let random_example_3 = features (Utils.choose_random examples) in
-    let union = ISet.union random_example_1 random_example_2 in
-    let diff = ISet.diff union random_example_3 in
-    if ISet.is_empty diff then
-(*         let () = Printf.printf "%i empty\n" (List.length examples) in *)
-        Utils.choose_random (ISet.elements random_example_1)
-    else
-(*         let () = Printf.printf "good\n" in *)
-        Utils.choose_random (ISet.elements diff)
-*)
-
-let random_features examples n =
-    let rec loop acc = function
-        | 0 -> acc
-        | n -> loop ((random_feature examples) :: acc) (n - 1) in
-    loop [] n
+let choose_features examples =
+    let rec loop proc_labels sel_feas examples =
+        match examples with
+        | [] -> sel_feas
+        | h :: t ->
+            if List.mem (label h) proc_labels then loop proc_labels sel_feas t
+            else loop ((label h) :: proc_labels)
+                      ((choose_feature examples h) :: sel_feas) t
+        in loop [] [] examples
+(* TODO how often I find duplicated features? *)
 
 let is_empty examples =
     examples = []
@@ -151,10 +160,7 @@ exception Empty_list
 
 (* m -- numbers of features to choose from *)
 let gini_rule examples =
-    let n = length examples in (* more examples = more features to consider *)
-    let m = n |> float_of_int |> sqrt |> int_of_float  in
-(*     let m = 10 in *)
-    let random_feas = random_features examples m in
+    let candid_feas = choose_features examples in
     let rec loop features impurs =
         match features with
         | [] -> List.rev impurs
@@ -162,8 +168,8 @@ let gini_rule examples =
             let rule = fun e -> ISet.mem h e in
             let impur = split_impur Impurity.gini_impur rule examples in
             loop t (impur :: impurs) in
-    let impurs = loop random_feas [] in
-    let feas_impurs = List.combine random_feas impurs in
+    let impurs = loop candid_feas [] in
+    let feas_impurs = List.combine candid_feas impurs in
     let f_start, i_start =
         match feas_impurs with
         | [] -> raise Empty_list

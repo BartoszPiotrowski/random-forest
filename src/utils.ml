@@ -40,9 +40,6 @@ let sample l n =
 let choose_random l =
     List.nth l (Random.int (List.length l))
 
-let choose_2_random l =
-    List.nth l (Random.int (List.length l))
-
 let read_lines file : string list =
   let ic = open_in file in
   let try_read () =
@@ -92,3 +89,11 @@ let freqs l =
     let occurs = loop [] sorted in
     let len = float_of_int (List.length l) in
     List.map (fun (e, c) -> (e, (float_of_int c) /. len)) occurs
+
+let uniq l =
+    let rec aux u l =
+        match l with
+        | [] -> u
+        | h :: t -> if List.mem h u then aux u t else aux (h :: u) t
+    in aux [] l
+
