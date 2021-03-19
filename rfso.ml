@@ -9,7 +9,7 @@ let train_x = ref ""
 let train_y = ref ""
 let test_x = ref ""
 let pred_y = ref ""
-let stats = ref True
+let stats = ref true
 
 let speclist =
     [
