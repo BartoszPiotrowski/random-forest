@@ -155,10 +155,9 @@ exception Empty_list
 (* m -- numbers of features to choose from *)
 let gini_rule examples =
     let n = length examples in (* more examples = more features to consider *)
-    let m1 = n |> float_of_int |> sqrt |> int_of_float  in
-    let m2 = List.length (Utils.uniq (labels examples))
-            |> float_of_int |> sqrt |> int_of_float in
-    let m = m1 + m2 in
+    let m1 = n in
+    let m2 = List.length (Utils.uniq (labels examples)) in
+    let m = (m1 + m2) |> float_of_int |> sqrt |> int_of_float in
     let random_feas = random_features examples m in
     let rec loop features impurs =
         match features with
