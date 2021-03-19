@@ -144,7 +144,11 @@ let split_impur impur rule examples =
         if rule (features e) then
             (label e :: left, right) else (left, label e :: right) in
     let left, right = List.fold_left append ([], []) examples in
-    ((impur left) +. (impur right)) /. 2.
+    let ll = float_of_int (List.length left) in
+    let lr = float_of_int (List.length right) in
+    let l = float_of_int (List.length examples) in
+    ((impur left) *. (ll /. l) +. (impur right) *. (lr /. l))
+(*     ((impur left) +. (impur right)) /. 2. *)
 
 exception Empty_list
 
