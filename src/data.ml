@@ -78,7 +78,7 @@ let random_features examples n =
     let rec loop acc = function
         | 0 -> acc
         | n -> loop ((random_feature examples) :: acc) (n - 1) in
-    Utils.uniq (loop [] n)
+    loop [] n
 
 let is_empty examples =
     examples = []
