@@ -27,4 +27,5 @@ let () = printf "Making predictions... %!"
 let preds1 = List.map (Forest.classify forest1)
     (List.map Data.unlabeled features) ;;
 let () = printf "Done.\n%!"
-let () = printf "Accuracy on train: %f%!" (Utils.accuracy labels preds1)
+let () = printf "Accuracy on train: %f\n%!" (Utils.accuracy labels preds1)
+let () = Forest.stats forest1
