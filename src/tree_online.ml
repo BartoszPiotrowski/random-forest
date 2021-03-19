@@ -39,7 +39,7 @@ module Make = functor (Data : DATA) -> struct
     let extend examples =
         let labels = Data.labels examples in
         let imp = Impurity.gini_impur labels in
-        imp > 0.3
+        imp > 0.4
     (* TODO more sophisticated condition needed *)
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
@@ -70,6 +70,20 @@ module Make = functor (Data : DATA) -> struct
                 (match rule (Data.features example) with
                 | Left  -> loop tree_l
                 | Right -> loop tree_r)
+        in loop tree
+
+    let depth tree =
+        let rec loop d t =
+            match t with
+            | Node(_, tl, tr) -> max (loop (d+1) tl) (loop (d+1) tr)
+            | Leaf(_) -> d
+        in loop 0 tree
+
+    let max_node tree =
+        let rec loop t =
+            match t with
+            | Node(_, tl, tr) -> max (loop tl) (loop tr)
+            | Leaf(_, es) -> List.length es
         in loop tree
 
 end

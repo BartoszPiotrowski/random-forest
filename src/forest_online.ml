@@ -30,4 +30,14 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         let votes = List.map (Tree.classify unlabeled_example) forest in
         vote votes
 
+    let stats forest =
+        let l = List.length forest in
+        let ds_sum = List.fold_left (fun s t -> s + Tree.depth t) 0 forest in
+        let ds_avg = (float_of_int ds_sum) /. (float_of_int l) in
+        let ns_sum = List.fold_left (fun s t -> s + Tree.max_node t) 0 forest in
+        let ns_avg = (float_of_int ns_sum) /. (float_of_int l) in
+        let () = Printf.printf "\nNumber of trees: %n\n" l in
+        let () = Printf.printf "Avg depth of trees: %f\n" ds_avg in
+        let () = Printf.printf "Avg largest node of trees: %f\n" ns_avg in ()
+
 end
