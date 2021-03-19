@@ -9,7 +9,6 @@ let train_x = ref ""
 let train_y = ref ""
 let test_x = ref ""
 let pred_y = ref ""
-let stats = ref true
 
 let speclist =
     [
@@ -17,7 +16,6 @@ let speclist =
         ("-train_y", Arg.Set_string train_y, "Training data, labels.");
         ("-test_x", Arg.Set_string test_x, "Testing data, features.");
         ("-pred_y", Arg.Set_string pred_y, "Predicted labels for testing data.");
-        ("-stats", Arg.Set_bool stats, "Print stats of the forest.");
     ]
 let usage = "Train an online random forest model and predict for test examples."
 let () = Arg.parse
