@@ -86,7 +86,7 @@ let choose_features examples =
         | h :: t ->
             if List.mem (label h) proc_labels then loop proc_labels sel_feas t
             else loop ((label h) :: proc_labels)
-                      ((choose_feature examples h) :: sel_feas) t
+                      ((choose_feature t h) :: sel_feas) t
         in loop [] [] examples
 (* TODO how often I find duplicated features? *)
 
