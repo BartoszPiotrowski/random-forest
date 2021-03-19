@@ -40,7 +40,6 @@ let random_feature {indices; features; _} =
     Utils.choose_random (ISet.elements random_example)
 *)
 
-exception No_good_candidate
 exception Empty_examples
 
 let random_feature examples =
@@ -79,7 +78,7 @@ let random_features examples n =
     let rec loop acc = function
         | 0 -> acc
         | n -> loop ((random_feature examples) :: acc) (n - 1) in
-    loop [] n
+    Utils.uniq (loop [] n)
 
 let is_empty examples =
     examples = []
@@ -153,7 +152,6 @@ exception Empty_list
 let gini_rule examples =
     let n = length examples in (* more examples = more features to consider *)
     let m1 = n |> float_of_int |> sqrt |> int_of_float  in
-(*     let m = 10 in *)
     let m2 = List.length (Utils.uniq (labels examples))
             |> float_of_int |> sqrt |> int_of_float in
     let m = m1 + m2 in
