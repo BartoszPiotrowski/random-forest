@@ -86,4 +86,11 @@ module Make = functor (Data : DATA) -> struct
             | Leaf(_, es) -> List.length es
         in loop tree
 
+    let max_labels_node tree =
+        let rec loop t =
+            match t with
+            | Node(_, tl, tr) -> max (loop tl) (loop tr)
+            | Leaf(_, es) -> List.length (Utils.uniq (Data.labels es))
+        in loop tree
+
 end
