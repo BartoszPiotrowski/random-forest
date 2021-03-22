@@ -181,7 +181,8 @@ let gini_rule examples =
     let m = (m1 + m2) |> float_of_int |> sqrt |> int_of_float in
 (*     let random_feas = random_features examples m in *)
     let splitting_feas = splitting_features examples in
-    let random_feas = [Utils.choose_random splitting_feas] in
+(*     let random_feas = [Utils.choose_random splitting_feas] in *)
+    let random_feas = splitting_feas in
     let rec loop features impurs =
         match features with
         | [] -> List.rev impurs
