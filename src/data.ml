@@ -91,10 +91,10 @@ let splitting_features examples =
         let union = List.fold_left (fun x y -> ISet.union x (features y))
             (features first_example) examples in
         let spl_feas = ISet.diff union inter in
-(*         let () = Printf.printf "i u s %n %n %n\n" *)
+(*         let () = Printf.printf "i u s %n %n %n\n"
             (ISet.cardinal inter)
             (ISet.cardinal union)
-            (ISet.cardinal spl_feas)
+            (ISet.cardinal spl_feas) *)
         in
         match ISet.is_empty spl_feas with
         | true -> raise No_splitting_feature
