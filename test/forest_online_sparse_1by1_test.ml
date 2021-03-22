@@ -9,6 +9,8 @@ let () = printf "Loading training data... %!"
 let features = load_features "test/data/field_theory.features"
 let labels = load_labels "test/data/field_theory.labels"
 let () = printf "Done.\n%!"
+let () = printf "Number of unique labels: %n\n" (List.length (Utils.uniq labels))
+let () = printf "Number of examples: %n\n" (List.length features)
 
 let empty = []
 
