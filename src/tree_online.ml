@@ -4,6 +4,7 @@ module type DATA = sig
     type 'a examples = 'a example list
     type direction = Left | Right
     type rule = features -> direction
+    exception No_splitting_feature
     val is_empty : 'a examples -> bool
     val add : 'a examples -> 'a example -> 'a examples
     val features : 'a example -> features
@@ -27,14 +28,23 @@ module Make = functor (Data : DATA) -> struct
 
     (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
     let make_new_node examples =
-(*         let () = Printf.printf "make_new_node\n" in *)
-        let rule = Data.gini_rule examples in
-        let examples_l, examples_r = Data.split rule examples in
-        if Data.is_empty examples_l || Data.is_empty examples_r
-        then Leaf(Data.random_label examples, examples)
-        else Node(rule,
-            Leaf(Data.random_label examples_l, examples_l),
-            Leaf(Data.random_label examples_r, examples_r))
+        let () = Printf.printf "make_new_node\n" in
+        try
+            let rule = Data.gini_rule examples in
+            let examples_l, examples_r = Data.split rule examples in
+            let () = List.iter
+                (fun x -> Printf.printf "l %n\n" (Data.label x)) examples_l in
+            let () = List.iter
+                (fun x -> Printf.printf "r %n\n" (Data.label x)) examples_r in
+            let () = Printf.printf "success\n" in
+            Node(rule,
+                Leaf(Data.random_label examples_l, examples_l),
+                Leaf(Data.random_label examples_r, examples_r))
+        with Data.No_splitting_feature ->
+            let () = Printf.printf "fail\n" in
+            Leaf(Data.random_label examples, examples)
+(*             assert false = (Data.is_empty examples_l); *)
+(*             assert false = (Data.is_empty examples_r); *)
 
     let extend examples =
         let labels = Data.labels examples in
