@@ -91,7 +91,7 @@ let splitting_features examples =
         let union = List.fold_left (fun x y -> ISet.union x (features y))
             (features first_example) examples in
         let spl_feas = ISet.diff union inter in
-        let () = Printf.printf "i u s %n %n %n\n"
+(*         let () = Printf.printf "i u s %n %n %n\n" *)
             (ISet.cardinal inter)
             (ISet.cardinal union)
             (ISet.cardinal spl_feas)
@@ -165,24 +165,23 @@ let split_impur impur rule examples =
         if rule (features e) then
             (label e :: left, right) else (left, label e :: right) in
     let left, right = List.fold_left append ([], []) examples in
-    let ll = float_of_int (List.length left) in
-    let lr = float_of_int (List.length right) in
-    let l = float_of_int (List.length examples) in
-    ((impur left) *. (ll /. l) +. (impur right) *. (lr /. l))
+    let el = float_of_int (List.length left) in
+    let er = float_of_int (List.length right) in
+    let e = float_of_int (List.length examples) in
+    let fl = sqrt (el /. e) in
+    let fr = sqrt (er /. e) in
+    ((impur left) *. fl +. (impur right) *. fr)
 (*     ((impur left) +. (impur right)) /. 2. *)
 
 exception Empty_list
 
 (* m -- numbers of features to choose from *)
 let gini_rule examples =
-    let n = length examples in (* more examples = more features to consider *)
-    let m1 = n in
-    let m2 = List.length (Utils.uniq (labels examples)) in
-    let m = (m1 + m2) |> float_of_int |> sqrt |> int_of_float in
-(*     let random_feas = random_features examples m in *)
+    let n = length examples in
+    let m = List.length (Utils.uniq (labels examples)) in
     let splitting_feas = splitting_features examples in
-(*     let random_feas = [Utils.choose_random splitting_feas] in *)
-    let random_feas = splitting_feas in
+    let n_feas = min ((n + m) / m) (List.length splitting_feas) in
+    let random_feas = Utils.choose_randoms splitting_feas n_feas in
     let rec loop features impurs =
         match features with
         | [] -> List.rev impurs
@@ -191,7 +190,6 @@ let gini_rule examples =
             let impur = split_impur Impurity.gini_impur rule examples in
             loop t (impur :: impurs) in
     let impurs = loop random_feas [] in
-    let () = List.iter (fun x -> Printf.printf "%f\n" x) impurs in
     let feas_impurs = List.combine random_feas impurs in
     let f_start, i_start =
         match feas_impurs with
@@ -200,7 +198,6 @@ let gini_rule examples =
     let best_fea, best_impur = List.fold_left
         (fun (f_b, i_b) (f, i) -> if i_b > i then (f, i) else (f_b, i_b))
         (f_start, i_start) feas_impurs in
-    let () = Printf.printf "%n\n" best_fea in
     fun example ->
         match ISet.mem best_fea example with
         | true -> Left

@@ -32,10 +32,12 @@ module Make = functor (Data : DATA) -> struct
         try
             let rule = Data.gini_rule examples in
             let examples_l, examples_r = Data.split rule examples in
+(*
             let () = List.iter
                 (fun x -> Printf.printf "l %n\n" (Data.label x)) examples_l in
             let () = List.iter
                 (fun x -> Printf.printf "r %n\n" (Data.label x)) examples_r in
+*)
             let () = Printf.printf "success\n" in
             Node(rule,
                 Leaf(Data.random_label examples_l, examples_l),
@@ -49,7 +51,7 @@ module Make = functor (Data : DATA) -> struct
     let init_cond examples depth =
         let labels = Data.labels examples in
         let imp = Impurity.gini_impur labels in
-        imp > 0.3 && depth < 200 && List.length examples > 5
+        imp > 0.3 && depth < 100 && List.length examples > 3
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
     let add (tree : 'a tree) (example : 'a Data.example) : 'a tree =

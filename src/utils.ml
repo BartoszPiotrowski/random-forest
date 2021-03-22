@@ -40,6 +40,19 @@ let sample l n =
 let choose_random l =
     List.nth l (Random.int (List.length l))
 
+let shuffle l =
+    let l = List.map (fun c -> (Random.bits (), c)) l in
+    let sl = List.sort compare l in
+    List.map snd sl
+
+let rec init_seg l n =
+    match l with
+    | [] -> failwith "init_seg"
+    | h :: t -> if n = 1 then [h] else h :: init_seg t (n-1)
+
+let choose_randoms l n =
+    init_seg (shuffle l) n
+
 let read_lines file : string list =
   let ic = open_in file in
   let try_read () =
