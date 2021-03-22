@@ -94,8 +94,8 @@ let splitting_features examples =
 (*         let () = Printf.printf "i u s %n %n %n\n"
             (ISet.cardinal inter)
             (ISet.cardinal union)
-            (ISet.cardinal spl_feas) *)
-        in
+            (ISet.cardinal spl_feas)
+        in *)
         match ISet.is_empty spl_feas with
         | true -> raise No_splitting_feature
         | false -> ISet.elements spl_feas
