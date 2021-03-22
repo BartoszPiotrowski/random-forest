@@ -46,11 +46,10 @@ module Make = functor (Data : DATA) -> struct
 (*             assert false = (Data.is_empty examples_l); *)
 (*             assert false = (Data.is_empty examples_r); *)
 
-    let extend examples =
+    let init_cond examples depth =
         let labels = Data.labels examples in
         let imp = Impurity.gini_impur labels in
-        imp > 0.3
-    (* TODO more sophisticated condition needed *)
+        imp > 0.3 && depth < 200 && List.length examples > 5
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
     let add (tree : 'a tree) (example : 'a Data.example) : 'a tree =
@@ -63,7 +62,7 @@ module Make = functor (Data : DATA) -> struct
 (*            Printf.eprintf "depth: %n\n" depth; *)
 (*            Printf.eprintf "#examples: %n\n%!" (List.length examples) ; *)
                 let examples = Data.add examples example in
-                if extend examples && depth < 1000 then make_new_node examples
+                if init_cond examples depth then make_new_node examples
                 else Leaf (label, examples)
         in
         loop 0 tree
