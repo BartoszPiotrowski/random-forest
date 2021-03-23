@@ -26,14 +26,6 @@ let features (features, label) =
 
 let length = List.length
 
-let all_features examples =
-    let all = List.fold_left
-        (fun s e -> ISet.union s (features e)) ISet.empty examples in
-    ISet.elements all
-
-let n_features examples =
-    List.length (all_features examples)
-
 let random_feature examples =
     let ex1 = Utils.choose_random examples in
     let complem e = label e <> label ex1 && features e <> features ex1 in
@@ -48,14 +40,14 @@ let random_feature examples =
         if ISet.is_empty diff then ISet.diff fex2 fex1 else diff in
     try Some (Utils.choose_random (ISet.elements feas)) with _ -> None
 
-(* returns deduplicated list of splitting features *)
+    (* returns deduplicated list of splitting features; try 2 * n times *)
 let random_features examples n =
     let rec loop c acc =
-        if c > 2 * n || (ISet.cardinal acc) > n - 1 then acc else
+        if c = 0 || (ISet.cardinal acc) > n - 1 then acc else
         match random_feature examples with
-        | None -> loop (c + 1) acc
-        | Some fea -> loop (c + 1) (ISet.add fea acc) in
-    ISet.elements (loop 0 ISet.empty)
+        | None -> loop (c - 1) acc
+        | Some fea -> loop (c - 1) (ISet.add fea acc) in
+    ISet.elements (loop (2 * n) ISet.empty)
 
 let is_splitting examples f =
     let is_mem e = ISet.mem f (features e) in
@@ -74,9 +66,6 @@ let random_label examples =
     match l with
     | None -> failwith "unlabeled example"
     | Some l -> l
-
-let random_subset examples =
-    Utils.sample_with_replace examples (length examples)
 
 let uniform_labels examples =
     let labels = labels examples in
@@ -108,20 +97,7 @@ let fold_left f s examples =
 let random_example examples =
     Utils.choose_random examples
 
-let random_feature_simple examples =
-    let e = random_example examples in
-    Utils.choose_random (ISet.elements (features e))
-
 exception Rule_not_found
-
-let random_rule examples =
-    let f = match random_feature examples with
-    | Some f -> f
-    | None -> raise Rule_not_found in
-    fun example ->
-        match ISet.mem f example with
-        | true -> Left
-        | false -> Right
 
 let split_impur impur rule examples =
     let append (left, right) e =
