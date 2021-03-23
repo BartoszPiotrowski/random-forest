@@ -112,8 +112,8 @@ let split_impur impur rule examples =
     ((impur left) *. fl +. (impur right) *. fr)
 
 (* m -- numbers of random features to choose from *)
-let gini_rule ?(m=1) examples =
-    let random_feas = random_features examples m in
+let gini_rule ?(n_feas=1) examples =
+    let random_feas = random_features examples n_feas in
     let best_fea = match random_feas with
     | [] -> raise Rule_not_found
     | [f] -> f

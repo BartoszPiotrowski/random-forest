@@ -9,7 +9,7 @@ module type DATA = sig
     val add : 'a examples -> 'a example -> 'a examples
     val features : 'a example -> features
     val split : rule -> 'a examples -> 'a examples * 'a examples
-    val gini_rule : ?m:int -> 'a examples -> rule
+    val gini_rule : ?n_feas:int -> 'a examples -> rule
     val random_label : 'a examples -> 'a
     val random_example : 'a examples -> 'a example
     val fold_left : ('a -> 'b example -> 'a) -> 'a -> 'b examples -> 'a
@@ -27,13 +27,13 @@ module Make = functor (Data : DATA) -> struct
         Leaf (Data.label example, [example])
 
     (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
-    let make_new_node ?(m=1) examples =
+    let make_new_node ?(n_feas=1) examples =
         try
             let n_labels = List.length (Utils.uniq (Data.labels examples)) in
             let n_examples = List.length examples in
             let rule = if n_labels = n_examples
-                then Data.gini_rule ~m:1 examples
-                else Data.gini_rule ~m:m examples in
+                then Data.gini_rule ~n_feas:1 examples
+                else Data.gini_rule ~n_feas:n_feas examples in
             let examples_l, examples_r = Data.split rule examples in
             Node(rule,
                 Leaf(Data.random_label examples_l, examples_l),
@@ -41,13 +41,13 @@ module Make = functor (Data : DATA) -> struct
         with Data.Rule_not_found ->
             Leaf(Data.random_label examples, examples)
 
-    let init_cond ?(min_imp=0.5) ?(max_depth=100) examples depth =
+    let init_cond ?(min_impur=0.5) ?(max_depth=100) examples depth =
         let labels = Data.labels examples in
         let imp = Impurity.gini_impur labels in
-        imp > min_imp && depth < max_depth
+        imp > min_impur && depth < max_depth
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
-    let add ?(m=1) ?(min_imp=0.5) ?(max_depth=100) tree example =
+    let add ?(n_feas=1) ?(min_impur=0.5) ?(max_depth=100) tree example =
         let rec loop depth = function
             | Node (rule, tree_l, tree_r) ->
                 (match rule (Data.features example) with
@@ -55,8 +55,8 @@ module Make = functor (Data : DATA) -> struct
                 | Right -> Node(rule, tree_l, loop (depth + 1) tree_r))
             | Leaf (label, examples) ->
                 let examples = Data.add examples example in
-                if init_cond ~min_imp ~max_depth examples depth
-                then make_new_node ~m examples
+                if init_cond ~min_impur ~max_depth examples depth
+                then make_new_node ~n_feas examples
                 else Leaf (label, examples)
         in
         loop 0 tree
