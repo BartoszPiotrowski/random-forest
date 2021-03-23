@@ -40,18 +40,13 @@ let random_feature examples =
     let examples_ex1 = List.filter complem examples in
     let ex2 = try Utils.choose_random examples_ex1 with _ -> ex1 in
     let feas =
-        if ex1 = ex2 then ISet.empty else
-        let ex1', ex2' = if Random.int 2 = 0 then ex1, ex2 else ex2, ex1 in
-        let diff = ISet.diff (features ex1') (features ex2') in
-        if ISet.is_empty diff then ISet.diff (features ex2') (features ex1')
-        else diff in
+        let fex1 = (features ex1) in
+        let fex2 = (features ex2) in
+        if fex1 = fex2 then ISet.empty else
+        let fex1, fex2 = if Random.int 2 = 0 then fex1, fex2 else fex2, fex1 in
+        let diff = ISet.diff fex1 fex2 in
+        if ISet.is_empty diff then ISet.diff fex2 fex1 else diff in
     try Some (Utils.choose_random (ISet.elements feas)) with _ -> None
-
-let is_splitting examples f =
-    let is_mem e = ISet.mem f (features e) in
-    let in_some = List.fold_left (fun b e -> b || is_mem e) false examples in
-    let in_all = List.fold_left (fun b e -> b && is_mem e) true examples in
-    in_some && (not in_all)
 
 (* returns deduplicated list of splitting features *)
 let random_features examples n =
@@ -139,7 +134,6 @@ let split_impur impur rule examples =
     let fl = sqrt (el /. e) in
     let fr = sqrt (er /. e) in
     ((impur left) *. fl +. (impur right) *. fr)
-(*     ((impur left) +. (impur right)) /. 2. *)
 
 (* m -- numbers of random features to choose from *)
 let gini_rule ?(m=1) examples =

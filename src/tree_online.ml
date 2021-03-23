@@ -30,11 +30,11 @@ module Make = functor (Data : DATA) -> struct
     (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
     let make_new_node ?(m=10) examples =
         try
-            let n_labels = List.length (Data.labels examples) in
+            let n_labels = List.length (Utils.uniq (Data.labels examples)) in
             let n_examples = List.length examples in
-            let rule =
-                if n_labels = n_examples then Data.random_rule examples
-                else Data.gini_rule ~m examples in
+            let rule = if n_labels = n_examples
+                then Data.gini_rule ~m:1 examples
+                else Data.gini_rule ~m:m examples in
             let examples_l, examples_r = Data.split rule examples in
             let () = Printf.printf "succ\n%!" in
             Node(rule,
