@@ -27,44 +27,32 @@ module Make = functor (Data : DATA) -> struct
         Leaf (Data.label example, [example])
 
     (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
-    let make_new_node examples =
-        let () = Printf.printf "make_new_node\n" in
+    let make_new_node ?(m=10) examples =
         try
-            let rule = Data.gini_rule examples in
+            let rule = Data.gini_rule ~m examples in
             let examples_l, examples_r = Data.split rule examples in
-(*
-            let () = List.iter
-                (fun x -> Printf.printf "l %n\n" (Data.label x)) examples_l in
-            let () = List.iter
-                (fun x -> Printf.printf "r %n\n" (Data.label x)) examples_r in
-*)
-            let () = Printf.printf "success\n" in
             Node(rule,
                 Leaf(Data.random_label examples_l, examples_l),
                 Leaf(Data.random_label examples_r, examples_r))
         with Data.Rule_not_found ->
-            let () = Printf.printf "fail\n" in
             Leaf(Data.random_label examples, examples)
-(*             assert false = (Data.is_empty examples_l); *)
-(*             assert false = (Data.is_empty examples_r); *)
 
-    let init_cond examples depth =
+    let init_cond ?(min_imp=0.5) ?(max_depth=100) examples depth =
         let labels = Data.labels examples in
         let imp = Impurity.gini_impur labels in
-        imp > 0.3 && depth < 100 && List.length examples > 3
+        imp > min_imp && depth < max_depth && List.length examples > 3
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
-    let add (tree : 'a tree) (example : 'a Data.example) : 'a tree =
+    let add ?(m=10) ?(min_imp=0.5) ?(max_depth=100) tree example =
         let rec loop depth = function
             | Node (rule, tree_l, tree_r) ->
                 (match rule (Data.features example) with
                 | Left  -> Node(rule, loop (depth + 1) tree_l, tree_r)
                 | Right -> Node(rule, tree_l, loop (depth + 1) tree_r))
             | Leaf (label, examples) ->
-(*            Printf.eprintf "depth: %n\n" depth; *)
-(*            Printf.eprintf "#examples: %n\n%!" (List.length examples) ; *)
                 let examples = Data.add examples example in
-                if init_cond examples depth then make_new_node examples
+                if init_cond ~min_imp ~max_depth examples depth
+                then make_new_node ~m examples
                 else Leaf (label, examples)
         in
         loop 0 tree

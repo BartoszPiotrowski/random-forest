@@ -34,14 +34,6 @@ let all_features examples =
 let n_features examples =
     List.length (all_features examples)
 
-(*
-let random_feature {indices; features; _} =
-    let random_example = features.(Utils.choose_random indices) in
-    Utils.choose_random (ISet.elements random_example)
-*)
-
-exception Empty_examples
-
 let random_feature examples =
     let ex1 = Utils.choose_random examples in
     let ex2 =
@@ -58,18 +50,19 @@ let random_feature examples =
             else diff
     in Utils.choose_random (ISet.elements feas) ;;
 
-let random_feature examples =
+let random_features_piece examples =
     let ex1 = Utils.choose_random examples in
     let complem e = label e <> label ex1 && features e <> features ex1 in
     let examples_ex1 = List.filter complem examples in
     let ex2 = try Utils.choose_random examples_ex1 with _ -> ex1 in
     let feas =
-        if ex1 = ex2 then features ex1 else
-        let ex1', ex2' = if Random.int 2 = 0 then ex1, ex2 else ex2, ex1 in
-        let diff = ISet.diff (features ex1') (features ex2') in
-        if ISet.is_empty diff then ISet.diff (features ex2') (features ex1')
-        else diff in
-    Utils.choose_random (ISet.elements feas)
+        let fex1 = features ex1 in
+        let fex2 = features ex2 in
+        if fex1 = fex2 then fex1 else
+        let fex1, fex2 = if Random.int 2 = 0 then fex1, fex2 else fex2, fex1 in
+        let diff = ISet.diff fex1 fex2 in
+        if ISet.is_empty diff then ISet.diff fex2 fex1 else diff in
+    ISet.elements feas
 
 let is_splitting examples f =
     let is_mem e = ISet.mem f (features e) in
@@ -77,48 +70,22 @@ let is_splitting examples f =
     let in_all = List.fold_left (fun b e -> b && is_mem e) true examples in
     in_some && (not in_all)
 
-
 (* returns deduplicated list of splitting features *)
 let random_features examples n =
-    let rec loop acc = function
-        | 0 -> acc
-        | n -> loop ((random_feature examples) :: acc) (n - 1) in
-    let feas = loop [] n in
-    let feas = ISet.elements (ISet.of_list feas) in
-    List.filter (is_splitting examples) feas
-
-exception No_splitting_features
-let splitting_features examples =
-    match examples with
-    | [] -> failwith "empty examples"
-    | first_example :: _ ->
-        let inter = List.fold_left (fun x y -> ISet.inter x (features y))
-            (features first_example) examples in
-        let union = List.fold_left (fun x y -> ISet.union x (features y))
-            (features first_example) examples in
-        let spl_feas = ISet.diff union inter in
-(*         let () = Printf.printf "i u s %n %n %n\n"
-            (ISet.cardinal inter)
-            (ISet.cardinal union)
-            (ISet.cardinal spl_feas)
-        in *)
-        match ISet.is_empty spl_feas with
-        | true -> raise No_splitting_features
-        | false -> ISet.elements spl_feas
+    let rec loop c acc =
+        let acc = Utils.uniq acc in
+        if c > n || List.length acc >= n
+        then try Utils.init_seg acc n with _ -> acc else
+        let new_feas = random_features_piece examples in
+        let new_feas = List.filter (is_splitting examples) new_feas in
+        loop (c + 1) new_feas @ acc
+    in loop 0 []
 
 let is_empty examples =
     examples = []
 
 let indices examples =
     List.init (List.length examples) (fun i -> i)
-
-let first_label examples =
-    let l = match examples with
-    | (f, l) :: _ -> l
-    | [] -> failwith "empty examples" in
-    match l with
-    | None -> failwith "unlabeled example"
-    | Some l -> l
 
 let random_label examples =
     let (f, l) = Utils.choose_random examples in
@@ -178,11 +145,9 @@ let split_impur impur rule examples =
     ((impur left) *. fl +. (impur right) *. fr)
 (*     ((impur left) +. (impur right)) /. 2. *)
 
-exception Empty_list
-
 exception Rule_not_found
 (* m -- numbers of random features to choose from *)
-let gini_rule ?m:(m=1) examples =
+let gini_rule ?(m=1) examples =
     let random_feas = random_features examples m in
     if random_feas = [] then raise Rule_not_found else
     let impur_from_fea f =
