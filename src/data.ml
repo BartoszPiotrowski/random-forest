@@ -36,33 +36,16 @@ let n_features examples =
 
 let random_feature examples =
     let ex1 = Utils.choose_random examples in
-    let ex2 =
-        let rec loop l =
-            match l with
-            | [] -> ex1
-            | ex :: t -> if (label ex) = (label ex1) then loop t else
-                if ISet.equal (features ex) (features ex1)
-                then loop t else ex in
-        loop examples in
-    let feas = if ex1 = ex2 then features ex1 else
-        let diff = ISet.diff (features ex1) (features ex2) in
-            if ISet.is_empty diff then ISet.diff (features ex2) (features ex1)
-            else diff
-    in Utils.choose_random (ISet.elements feas) ;;
-
-let random_features_piece examples =
-    let ex1 = Utils.choose_random examples in
     let complem e = label e <> label ex1 && features e <> features ex1 in
     let examples_ex1 = List.filter complem examples in
     let ex2 = try Utils.choose_random examples_ex1 with _ -> ex1 in
     let feas =
-        let fex1 = features ex1 in
-        let fex2 = features ex2 in
-        if fex1 = fex2 then fex1 else
-        let fex1, fex2 = if Random.int 2 = 0 then fex1, fex2 else fex2, fex1 in
-        let diff = ISet.diff fex1 fex2 in
-        if ISet.is_empty diff then ISet.diff fex2 fex1 else diff in
-    ISet.elements feas
+        if ex1 = ex2 then features ex1 else
+        let ex1', ex2' = if Random.int 2 = 0 then ex1, ex2 else ex2, ex1 in
+        let diff = ISet.diff (features ex1') (features ex2') in
+        if ISet.is_empty diff then ISet.diff (features ex2') (features ex1')
+        else diff in
+    Utils.choose_random (ISet.elements feas)
 
 let is_splitting examples f =
     let is_mem e = ISet.mem f (features e) in
@@ -72,14 +55,18 @@ let is_splitting examples f =
 
 (* returns deduplicated list of splitting features *)
 let random_features examples n =
-    let rec loop c acc =
-        let acc = Utils.uniq acc in
-        if c > n || List.length acc >= n
-        then try Utils.init_seg acc n with _ -> acc else
-        let new_feas = random_features_piece examples in
-        let new_feas = List.filter (is_splitting examples) new_feas in
-        loop (c + 1) new_feas @ acc
-    in loop 0 []
+    let feas = List.init n (fun _ -> random_feature examples) in
+    let feas = ISet.elements (ISet.of_list feas) in
+    List.filter (is_splitting examples) feas
+
+
+
+let is_splitting examples f =
+    let is_mem e = ISet.mem f (features e) in
+    let in_some = List.fold_left (fun b e -> b || is_mem e) false examples in
+    let in_all = List.fold_left (fun b e -> b && is_mem e) true examples in
+    in_some && (not in_all)
+
 
 let is_empty examples =
     examples = []
@@ -148,7 +135,9 @@ let split_impur impur rule examples =
 exception Rule_not_found
 (* m -- numbers of random features to choose from *)
 let gini_rule ?(m=1) examples =
+    let t = Sys.time () in
     let random_feas = random_features examples m in
+    let () = Printf.printf "%f\n%!" (Sys.time () -. t) in
     if random_feas = [] then raise Rule_not_found else
     let impur_from_fea f =
         split_impur Impurity.gini_impur (ISet.mem f) examples in
