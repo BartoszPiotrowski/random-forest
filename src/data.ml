@@ -59,8 +59,6 @@ let random_features examples n =
     let feas = ISet.elements (ISet.of_list feas) in
     List.filter (is_splitting examples) feas
 
-
-
 let is_splitting examples f =
     let is_mem e = ISet.mem f (features e) in
     let in_some = List.fold_left (fun b e -> b || is_mem e) false examples in
