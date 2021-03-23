@@ -65,9 +65,10 @@ let random_feature examples =
     let ex2 = try Utils.choose_random examples_ex1 with _ -> ex1 in
     let feas =
         if ex1 = ex2 then features ex1 else
-        let diff1 = ISet.diff (features ex1) (features ex2) in
-        let diff2 = ISet.diff (features ex2) (features ex1) in
-        ISet.union diff1 diff2 in
+        let ex1', ex2' = if Random.int 2 = 0 then ex1, ex2 else ex2, ex1 in
+        let diff = ISet.diff (features ex1') (features ex2') in
+        if ISet.is_empty diff then ISet.diff (features ex2') (features ex1')
+        else diff in
     Utils.choose_random (ISet.elements feas)
 
 let is_splitting examples f =
