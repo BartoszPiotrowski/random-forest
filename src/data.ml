@@ -138,12 +138,16 @@ let split_impur impur rule examples =
 (* m -- numbers of random features to choose from *)
 let gini_rule ?(m=1) examples =
     let random_feas = random_features examples m in
-    if random_feas = [] then raise Rule_not_found else
-    let impur_from_fea f =
-        split_impur Impurity.gini_impur (ISet.mem f) examples in
-    let impurs = List.map impur_from_fea random_feas in
-    let impurs_feas = List.combine impurs random_feas in
-    let best_impur, best_fea = Utils.min_list impurs_feas in
+    let best_fea = match random_feas with
+    | [] -> raise Rule_not_found
+    | [f] -> f
+    | _ ->
+        let impur_from_fea f =
+            split_impur Impurity.gini_impur (ISet.mem f) examples in
+        let impurs = List.map impur_from_fea random_feas in
+        let impurs_feas = List.combine impurs random_feas in
+        let best_impur, best_fea = Utils.min_list impurs_feas in
+        best_fea in
     fun example ->
         match ISet.mem best_fea example with
         | true -> Left
