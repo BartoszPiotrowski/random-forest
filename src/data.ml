@@ -58,30 +58,35 @@ let random_feature examples =
             else diff
     in Utils.choose_random (ISet.elements feas) ;;
 
-
-(*
 let random_feature examples =
-    let random_example_1 = features (Utils.choose_random examples) in
-    let random_example_2 = features (Utils.choose_random examples) in
-    let random_example_3 = features (Utils.choose_random examples) in
-    let union = ISet.union random_example_1 random_example_2 in
-    let diff = ISet.diff union random_example_3 in
-    if ISet.is_empty diff then
-(*         let () = Printf.printf "%i empty\n" (List.length examples) in *)
-        Utils.choose_random (ISet.elements random_example_1)
-    else
-(*         let () = Printf.printf "good\n" in *)
-        Utils.choose_random (ISet.elements diff)
-*)
+    let ex1 = Utils.choose_random examples in
+    let complem e = label e <> label ex1 && features e <> features ex1 in
+    let examples_ex1 = List.filter complem examples in
+    let ex2 = try Utils.choose_random examples_ex1 with _ -> ex1 in
+    let feas =
+        if ex1 = ex2 then features ex1 else
+        let diff1 = ISet.diff (features ex1) (features ex2) in
+        let diff2 = ISet.diff (features ex2) (features ex1) in
+        ISet.union diff1 diff2 in
+    Utils.choose_random (ISet.elements feas)
 
+let is_splitting examples f =
+    let is_mem e = ISet.mem f (features e) in
+    let in_some = List.fold_left (fun b e -> b || is_mem e) false examples in
+    let in_all = List.fold_left (fun b e -> b && is_mem e) true examples in
+    in_some && (not in_all)
+
+
+(* returns deduplicated list of splitting features *)
 let random_features examples n =
     let rec loop acc = function
         | 0 -> acc
         | n -> loop ((random_feature examples) :: acc) (n - 1) in
-    loop [] n
+    let feas = loop [] n in
+    let feas = ISet.elements (ISet.of_list feas) in
+    List.filter (is_splitting examples) feas
 
-exception No_splitting_feature
-
+exception No_splitting_features
 let splitting_features examples =
     match examples with
     | [] -> failwith "empty examples"
@@ -97,9 +102,8 @@ let splitting_features examples =
             (ISet.cardinal spl_feas)
         in *)
         match ISet.is_empty spl_feas with
-        | true -> raise No_splitting_feature
+        | true -> raise No_splitting_features
         | false -> ISet.elements spl_feas
-
 
 let is_empty examples =
     examples = []
@@ -175,29 +179,16 @@ let split_impur impur rule examples =
 
 exception Empty_list
 
-(* m -- numbers of features to choose from *)
-let gini_rule examples =
-    let n = length examples in
-    let m = List.length (Utils.uniq (labels examples)) in
-    let splitting_feas = splitting_features examples in
-    let n_feas = min ((n + m) / m) (List.length splitting_feas) in
-    let random_feas = Utils.choose_randoms splitting_feas n_feas in
-    let rec loop features impurs =
-        match features with
-        | [] -> List.rev impurs
-        | h :: t ->
-            let rule = fun e -> ISet.mem h e in
-            let impur = split_impur Impurity.gini_impur rule examples in
-            loop t (impur :: impurs) in
-    let impurs = loop random_feas [] in
-    let feas_impurs = List.combine random_feas impurs in
-    let f_start, i_start =
-        match feas_impurs with
-        | [] -> raise Empty_list
-        | (f, i) :: _ -> (f, i) in
-    let best_fea, best_impur = List.fold_left
-        (fun (f_b, i_b) (f, i) -> if i_b > i then (f, i) else (f_b, i_b))
-        (f_start, i_start) feas_impurs in
+exception Rule_not_found
+(* m -- numbers of random features to choose from *)
+let gini_rule ?m:(m=1) examples =
+    let random_feas = random_features examples m in
+    if random_feas = [] then raise Rule_not_found else
+    let impur_from_fea f =
+        split_impur Impurity.gini_impur (ISet.mem f) examples in
+    let impurs = List.map impur_from_fea random_feas in
+    let impurs_feas = List.combine impurs random_feas in
+    let best_impur, best_fea = Utils.min_list impurs_feas in
     fun example ->
         match ISet.mem best_fea example with
         | true -> Left
