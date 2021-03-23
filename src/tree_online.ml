@@ -10,6 +10,7 @@ module type DATA = sig
     val features : 'a example -> features
     val split : rule -> 'a examples -> 'a examples * 'a examples
     val gini_rule : ?m:int -> 'a examples -> rule
+    val random_rule : 'a examples -> rule
     val random_label : 'a examples -> 'a
     val random_example : 'a examples -> 'a example
     val fold_left : ('a -> 'b example -> 'a) -> 'a -> 'b examples -> 'a
@@ -29,18 +30,24 @@ module Make = functor (Data : DATA) -> struct
     (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
     let make_new_node ?(m=10) examples =
         try
-            let rule = Data.gini_rule ~m examples in
+            let n_labels = List.length (Data.labels examples) in
+            let n_examples = List.length examples in
+            let rule =
+                if n_labels = n_examples then Data.random_rule examples
+                else Data.gini_rule ~m examples in
             let examples_l, examples_r = Data.split rule examples in
+            let () = Printf.printf "succ\n%!" in
             Node(rule,
                 Leaf(Data.random_label examples_l, examples_l),
                 Leaf(Data.random_label examples_r, examples_r))
         with Data.Rule_not_found ->
+            let () = Printf.printf "fail\n%!" in
             Leaf(Data.random_label examples, examples)
 
     let init_cond ?(min_imp=0.5) ?(max_depth=100) examples depth =
         let labels = Data.labels examples in
         let imp = Impurity.gini_impur labels in
-        imp > min_imp && depth < max_depth && List.length examples > 3
+        imp > min_imp && depth < max_depth
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
     let add ?(m=10) ?(min_imp=0.5) ?(max_depth=100) tree example =

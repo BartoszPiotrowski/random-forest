@@ -40,12 +40,12 @@ let random_feature examples =
     let examples_ex1 = List.filter complem examples in
     let ex2 = try Utils.choose_random examples_ex1 with _ -> ex1 in
     let feas =
-        if ex1 = ex2 then features ex1 else
+        if ex1 = ex2 then ISet.empty else
         let ex1', ex2' = if Random.int 2 = 0 then ex1, ex2 else ex2, ex1 in
         let diff = ISet.diff (features ex1') (features ex2') in
         if ISet.is_empty diff then ISet.diff (features ex2') (features ex1')
         else diff in
-    Utils.choose_random (ISet.elements feas)
+    try Some (Utils.choose_random (ISet.elements feas)) with _ -> None
 
 let is_splitting examples f =
     let is_mem e = ISet.mem f (features e) in
@@ -55,16 +55,18 @@ let is_splitting examples f =
 
 (* returns deduplicated list of splitting features *)
 let random_features examples n =
-    let feas = List.init n (fun _ -> random_feature examples) in
-    let feas = ISet.elements (ISet.of_list feas) in
-    List.filter (is_splitting examples) feas
+    let rec loop c acc =
+        if c > 2 * n || (ISet.cardinal acc) > n - 1 then acc else
+        match random_feature examples with
+        | None -> loop (c + 1) acc
+        | Some fea -> loop (c + 1) (ISet.add fea acc) in
+    ISet.elements (loop 0 ISet.empty)
 
 let is_splitting examples f =
     let is_mem e = ISet.mem f (features e) in
     let in_some = List.fold_left (fun b e -> b || is_mem e) false examples in
     let in_all = List.fold_left (fun b e -> b && is_mem e) true examples in
     in_some && (not in_all)
-
 
 let is_empty examples =
     examples = []
@@ -102,18 +104,27 @@ let split rule examples =
 let length examples =
     List.length examples
 
-let random_example examples =
-    Utils.choose_random examples
-
 let add examples example =
     example :: examples
 
 let fold_left f s examples =
     List.fold_left f s examples
 
+let random_example examples =
+    Utils.choose_random examples
+
+let random_feature_simple examples =
+    let e = random_example examples in
+    Utils.choose_random (ISet.elements (features e))
+
+exception Rule_not_found
+
 let random_rule examples =
+    let f = match random_feature examples with
+    | Some f -> f
+    | None -> raise Rule_not_found in
     fun example ->
-        match ISet.mem (random_feature examples) example with
+        match ISet.mem f example with
         | true -> Left
         | false -> Right
 
@@ -130,12 +141,9 @@ let split_impur impur rule examples =
     ((impur left) *. fl +. (impur right) *. fr)
 (*     ((impur left) +. (impur right)) /. 2. *)
 
-exception Rule_not_found
 (* m -- numbers of random features to choose from *)
 let gini_rule ?(m=1) examples =
-    let t = Sys.time () in
     let random_feas = random_features examples m in
-    let () = Printf.printf "%f\n%!" (Sys.time () -. t) in
     if random_feas = [] then raise Rule_not_found else
     let impur_from_fea f =
         split_impur Impurity.gini_impur (ISet.mem f) examples in
