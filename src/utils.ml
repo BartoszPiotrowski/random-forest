@@ -1,4 +1,5 @@
-module IntMap = Map.Make(Int)
+module ISet = Set.Make(Int)
+
 
 let min_list = function
     | [] -> failwith "Empty list"
@@ -104,11 +105,10 @@ let freqs l =
     List.map (fun (e, c) -> (e, (float_of_int c) /. len)) occurs
 
 let uniq l =
-    let rec aux u l =
-        match l with
-        | [] -> u
-        | h :: t -> if List.mem h u then aux u t else aux (h :: u) t
-    in aux [] l
+    ISet.elements (List.fold_left (fun s e -> ISet.add e s) ISet.empty l)
+
+let nuniq l =
+    ISet.cardinal (List.fold_left (fun s e -> ISet.add e s) ISet.empty l)
 
 let rec min_list = function
     | [] -> invalid_arg "empty list"

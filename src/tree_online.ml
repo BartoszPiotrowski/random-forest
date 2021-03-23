@@ -28,9 +28,9 @@ module Make = functor (Data : DATA) -> struct
         Leaf (Data.label example, [example])
 
     (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
-    let make_new_node ?(m=10) examples =
+    let make_new_node ?(m=1) examples =
         try
-            let n_labels = List.length (Utils.uniq (Data.labels examples)) in
+            let n_labels = Utils.nuniq (Data.labels examples) in
             let n_examples = List.length examples in
             let rule = if n_labels = n_examples
                 then Data.gini_rule ~m:1 examples
