@@ -47,7 +47,7 @@ module Make = functor (Data : DATA) -> struct
         imp > min_impur && depth < max_depth
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
-    let add ?(n_feas=1) ?(min_impur=0.5) ?(max_depth=100) tree example =
+    let add ?(n_feas=10) ?(min_impur=0.5) ?(max_depth=100) tree example =
         let rec loop depth = function
             | Node (rule, tree_l, tree_r) ->
                 (match rule (Data.features example) with
