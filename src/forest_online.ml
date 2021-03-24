@@ -57,6 +57,6 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         let () = Printf.printf "Avg largest node of trees: %f\n" ns_avg in
         let () = Printf.printf
             "Avg largest n. of labels in node of trees: %f\n" ns_avg_lab in
-        ()
+        let () = Printf.printf "\n" in ()
 
 end
