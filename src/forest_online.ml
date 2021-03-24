@@ -3,7 +3,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
 
     let empty = []
 
-    let add ?(n_feas=1) ?(min_impur=0.5) ?(max_depth=100) ?(n_trees=1000)
+    let add ?(n_feas=1) ?(min_impur=0.5) ?(max_depth=100) ?(n_trees=100)
         forest example =
         let n = List.length forest in
         let must_add_tree = (n = 0) || (Random.int n = 0) in
@@ -42,6 +42,12 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         else if pred_type = "rank" then
             Ranking (List.map (fun (l, _) -> l) scores)
         else failwith "unknown prediction type specified"
+
+    let classify forest example =
+        let scores = score forest example in
+        match scores with
+        | [] -> failwith "empty list of voting scores"
+        | (l, _) :: _ -> l
 
     let stats forest =
         let l = List.length forest in
