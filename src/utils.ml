@@ -71,6 +71,7 @@ let time f x =
 
 let load_features file =
     let lines = read_lines file in
+    let () = Printf.printf "AAA\n" in
     let split = Str.split_delim (Str.regexp " ") in
     let rec loop split_lines = function
         | [] -> List.rev split_lines
