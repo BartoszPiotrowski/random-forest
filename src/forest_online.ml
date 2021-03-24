@@ -7,7 +7,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         forest example =
         let n = List.length forest in
         let must_add_tree = (n = 0) || (Random.int n = 0) in
-        let must_remove_tree = (n > 0) && (Random.int n) > n_trees in
+        let must_remove_tree = n > n_trees in
         let forest =
             if must_remove_tree then Utils.remove_last forest else forest in
         let updated_trees =
@@ -23,15 +23,25 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         let freqs = Utils.freqs votes in
         List.sort (fun (_, c1) (_, c2) -> compare c2 c1) freqs
 
-    let classify forest example =
-        let votes = List.map (Tree.classify example) forest in
-        match vote votes with
-        | (e, _) :: _ -> e
-        | [] -> failwith "empty list of voting scores"
+    type 'a pred =
+        | Label of 'a
+        | Ranking of ('a list)
+        | Ranking_with_scores of (('a * float) list)
 
-    let score forest unlabeled_example =
-        let votes = List.map (Tree.classify unlabeled_example) forest in
+    let score forest example =
+        let votes = List.map (Tree.classify example) forest in
         vote votes
+
+    let predict ?(pred_type="label") forest example =
+        let scores = score forest example in
+        if pred_type = "label" then
+            let l = match scores with
+            | (l, _) :: _ -> l
+            | [] -> failwith "empty list of voting scores" in
+            Label l
+        else if pred_type = "rank" then
+            Ranking (List.map (fun (l, _) -> l) scores)
+        else failwith "unknown prediction type specified"
 
     let stats forest =
         let l = List.length forest in

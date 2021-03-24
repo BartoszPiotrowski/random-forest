@@ -9,11 +9,11 @@ let train_x = ref ""
 let train_y = ref ""
 let test_x = ref ""
 let pred_y = ref ""
-let n_trees = ref 100
+let n_trees = ref 1000
 let max_depth = ref 100
 let min_impur = ref 0.5
 let n_feas = ref 1
-let output_type = ref "labels"
+let pred_type = ref "label"
 
 let speclist =
     [
@@ -25,7 +25,7 @@ let speclist =
         ("-max_depth", Arg.Set_int max_depth, "Max depth of trees.");
         ("-min_impur", Arg.Set_float min_impur, "Min impurity to trigger split.");
         ("-n_feas", Arg.Set_int n_feas, "Number of random features in splits.");
-        ("-output_type", Arg.Set_string output_type, "Either labels or ranks.");
+        ("-pred_type", Arg.Set_string pred_type, "Either label or rank.");
     ]
 let usage = "Train an online random forest model and predict for test examples."
 let () = Arg.parse
@@ -45,6 +45,7 @@ let learn forest features_labels = List.fold_left
         ~n_feas:!n_feas
         ~max_depth:!max_depth
         ~min_impur:!min_impur
+        ~n_trees:!n_trees
         forest (Data.labeled example))
     forest features_labels
 let train_features_labels = List.combine train_features train_labels
@@ -52,10 +53,16 @@ let () = printf "Training random forest... %!"
 let forest = learn [] train_features_labels
 let () = printf "Done.\n%!"
 let () = printf "Making predictions... %!"
-let preds = List.map (classify forest) (List.map Data.unlabeled test_features)
+let preds = List.map (predict ~pred_type:!pred_type forest)
+    (List.map Data.unlabeled test_features)
 let () = printf "Done.\n%!"
 let preds_file = open_out !pred_y
-let () = List.iter (fun p -> fprintf preds_file "%n\n" p) preds
+let () = List.iter (fun p ->
+    match p with
+    | Label l -> fprintf preds_file "%n\n" l
+    | Ranking r -> fprintf preds_file "%s\n"
+        (String.concat " " (List.map string_of_int r))
+) preds
 let () = close_out preds_file
-let () = printf "Stats of the trained forest:\n%!"
+let () = printf "\n## Stats of the trained forest ##\n%!"
 let () = stats forest
