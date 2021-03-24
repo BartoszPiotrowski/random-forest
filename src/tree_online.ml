@@ -82,6 +82,13 @@ module Make = functor (Data : DATA) -> struct
             | Leaf(_) -> d
         in loop 0 tree
 
+    let n_nodes tree =
+        let rec loop t =
+            match t with
+            | Node(_, tl, tr) -> 1 + (loop tl) + (loop tr)
+            | Leaf(_) -> 1
+        in loop tree
+
     let max_node tree =
         let rec loop t =
             match t with
