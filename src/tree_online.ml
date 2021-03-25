@@ -45,8 +45,7 @@ module Make = functor (Data : DATA) -> struct
 
     let init_cond ?(min_impur=0.5) ?(max_depth=100) examples depth =
         let labels = Data.labels examples in
-        let imp = Impurity.gini_impur labels in
-        imp > min_impur && depth < max_depth
+        depth < max_depth && min_impur < (Impurity.gini_impur labels)
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
     let add ?(n_feas=1) ?(min_impur=0.5) ?(max_depth=100) tree example =
