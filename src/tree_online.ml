@@ -32,14 +32,20 @@ module Make = functor (Data : DATA) -> struct
         let rule = Data.gini_rule examples in
         let examples_l, examples_r = Data.split rule examples in
         if Data.is_empty examples_l || Data.is_empty examples_r
-        then Leaf(Data.random_label examples, examples)
-        else Node(rule,
+        then
+            let () = Printf.printf "make, leaf\n%!" in
+            Leaf(Data.random_label examples, examples)
+        else
+            let () = Printf.printf "make, node\n%!" in
+            Node(rule,
             Leaf(Data.random_label examples_l, examples_l),
             Leaf(Data.random_label examples_r, examples_r))
 
     let init_cond ?(min_impur=0.5) examples =
         let labels = Data.labels examples in
-        min_impur < (Impurity.gini_impur labels)
+        let impur = Impurity.gini_impur labels in
+        let () = Printf.printf "%f\n%!" impur in
+        impur > min_impur
 
     (* pass the example to a leaf; if a condition is satisfied, extend the tree *)
     let add ?(min_impur=0.5) tree example =
@@ -50,8 +56,12 @@ module Make = functor (Data : DATA) -> struct
                 | Right -> Node(fea, tree_l, loop tree_r))
             | Leaf (label, examples) ->
                 let examples = Data.add examples example in
-                if init_cond examples then make_new_node examples
-                else Leaf (label, examples)
+                if init_cond examples then
+                    let () = Printf.printf "impur, make\n%!" in
+                    make_new_node examples
+                else
+                    let () = Printf.printf "imupr, leaf\n%!" in
+                    Leaf (label, examples)
         in
         loop tree
 
