@@ -29,13 +29,9 @@ module Make = functor (Data : DATA) -> struct
         Leaf (Data.label example, [example])
 
     (* returns Node(split_rule, Leaf (label1, stats1), Leaf(label2, stats2)) *)
-    let make_new_node ?(n_feas=1) examples =
+    let make_new_node examples =
         try
-            let n_labels = List.length (Utils.uniq (Data.labels examples)) in
-            let n_examples = List.length examples in
-            let fea = if n_labels = n_examples
-                then Data.gini_rule ~n_feas:1 examples
-                else Data.gini_rule ~n_feas:n_feas examples in
+            let fea = Data.gini_rule examples in
             let examples_l, examples_r = Data.split fea examples in
             Node(fea,
                 Leaf(Data.random_label examples_l, examples_l),
@@ -57,7 +53,7 @@ module Make = functor (Data : DATA) -> struct
             | Leaf (label, examples) ->
                 let examples = Data.add examples example in
                 if init_cond ~min_impur ~max_depth examples depth
-                then make_new_node ~n_feas examples
+                then make_new_node examples
                 else Leaf (label, examples)
         in
         loop 0 tree
