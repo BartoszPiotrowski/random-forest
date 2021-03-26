@@ -9,8 +9,9 @@ let train_x = ref ""
 let train_y = ref ""
 let test_x = ref ""
 let pred_y = ref ""
-let n_trees = ref 1000
+let n_trees = ref 320
 let min_impur = ref 0.5
+let remove_old = ref false
 let pred_type = ref "label"
 
 let speclist =
@@ -21,6 +22,7 @@ let speclist =
         ("-pred_y", Arg.Set_string pred_y, "Predictions for testing data.");
         ("-n_trees", Arg.Set_int n_trees, "Max number of trees.");
         ("-min_impur", Arg.Set_float min_impur, "Min impurity to trigger split.");
+        ("-remove_old", Arg.Set remove_old, "Remove old trees.");
         ("-pred_type", Arg.Set_string pred_type, "Either label or rank.");
     ]
 let usage = "Train an online random forest model and predict for test examples."
@@ -40,6 +42,7 @@ let learn forest features_labels = List.fold_left
     (fun forest example -> add
         ~min_impur:!min_impur
         ~n_trees:!n_trees
+        ~remove_old:!remove_old
         forest (Data.labeled example))
     forest features_labels
 let train_features_labels = List.combine train_features train_labels
