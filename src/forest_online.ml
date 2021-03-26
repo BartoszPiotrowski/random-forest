@@ -3,13 +3,13 @@ module Make = functor (Data : Tree_online.DATA) -> struct
 
     let empty = []
 
-    let add ?(n_feas=1) ?(min_impur=0.5) ?(max_depth=100) ?(n_trees=100)
+    let add ?(min_impur=0.5) ?(n_trees=1000)
         forest example =
         let n = List.length forest in
         let add_tree = (n = 0) || ((Random.int n = 0) && n < n_trees) in
         let updated_trees =
             List.map
-            (fun tree -> Tree.add ~n_feas ~min_impur ~max_depth tree example)
+            (fun tree -> Tree.add ~min_impur tree example)
             forest in
         if add_tree then Tree.leaf example :: updated_trees else updated_trees
 
