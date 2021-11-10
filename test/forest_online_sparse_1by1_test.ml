@@ -16,7 +16,7 @@ let empty = []
 
 let learn forest features_labels = List.fold_left
 (*     (fun forest out -> add forest ((fst out), Some (snd out))) *)
-    (fun forest out -> add forest (Data.labeled out))
+    (fun forest out -> add ~min_impur:0.5 forest (Data.labeled out))
     forest features_labels
 
 let features_labels = List.combine features labels
