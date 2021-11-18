@@ -15,6 +15,20 @@ let accuracy l1 l2 =
     let correct = List.filter (fun (x, y) -> x = y) pairs in
     float_of_int (List.length correct) /. float_of_int (List.length pairs)
 
+let rec sum = function
+    | [] -> 0.
+    | h :: t -> h +. sum t
+
+let avg l =
+    (sum l) /. (float_of_int (List.length l))
+
+let rmse labels predictions =
+    assert (List.length labels = List.length predictions);
+    let pairs = List.combine labels predictions in
+    let se (x, y) = ((float_of_int x) -. y) ** 2. in
+    let ses = List.map se pairs in
+    (avg ses) ** 0.5
+
 let array_subset x inds =
     Array.of_list (List.map (fun i -> x.(i)) inds)
 
@@ -113,3 +127,5 @@ let rec min_list = function
 let rec max_list = function
     | [] -> invalid_arg "empty list"
     | h :: t -> List.fold_left max h t
+
+
