@@ -20,4 +20,5 @@ test: native
 	./rfso.native \
 		-train_x test/data/field_theory_train.features \
 		-train_y test/data/field_theory_train.labels \
-		-test_x  test/data/field_theory_test.features
+		-test_x  test/data/field_theory_test.features \
+		-pred_y  test/data/field_theory_test.preds
