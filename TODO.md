@@ -3,3 +3,4 @@
 - parmap makes trees correlated?
 - random sparse feature from union \ intersection
 - when feature column is uniform
+- feature importance
