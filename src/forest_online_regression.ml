@@ -3,7 +3,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
 
     let empty = []
 
-    let add ?(min_impur=0.5) ?(n_trees=100) ?(remove_old=false)
+    let add ?(min_impur=0.1) ?(n_trees=100) ?(remove_old=false)
         forest example =
         let n = List.length forest in
         let add_tree = (n = 0) || ((Random.int n = 0) && n < n_trees) in
@@ -19,11 +19,6 @@ module Make = functor (Data : Tree_online.DATA) -> struct
     let vote votes =
         let freqs = Utils.freqs votes in
         List.sort (fun (_, c1) (_, c2) -> compare c2 c1) freqs
-
-    type 'a pred =
-        | Label of 'a
-        | Ranking of ('a list)
-        | Ranking_with_scores of (('a * float) list)
 
     let predict forest example =
         let votes = List.map (Tree.classify example) forest in

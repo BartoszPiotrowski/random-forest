@@ -23,4 +23,5 @@ let preds1 = List.map (Forest.predict forest1)
     (List.map Data.unlabeled features) ;;
 let () = printf "Done.\n%!"
 let () = printf "RMSE on train: %f\n%!" (Utils.rmse labels preds1)
+let () = printf "Accuracy on train: %f\n%!" (Utils.accuracy_binreg labels preds1)
 let () = Forest.stats forest1

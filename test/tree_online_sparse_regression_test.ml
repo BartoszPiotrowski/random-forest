@@ -13,6 +13,6 @@ let examples = List.map Data.labeled examples
 let tree = tree examples
 let preds = List.map (fun e -> classify e tree) examples
 (* let () = List.iter (fun x -> printf "%f\n" x) preds *)
-let () = print_float (rmse labels preds)
+let () = printf "RMSE: %f\n" (rmse labels preds)
 
 

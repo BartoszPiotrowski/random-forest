@@ -29,6 +29,13 @@ let rmse labels predictions =
     let ses = List.map se pairs in
     (avg ses) ** 0.5
 
+let accuracy_binreg labels predictions =
+    assert (List.length labels = List.length predictions);
+    let pairs = List.combine labels predictions in
+    let ok (x, y) = if x == 0 then y < 0.5 else y >= 0.5 in
+    let correct = List.map ok pairs in
+    avg (List.map (fun x -> if x then 1. else 0.) correct)
+
 let array_subset x inds =
     Array.of_list (List.map (fun i -> x.(i)) inds)
 
