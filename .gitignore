@@ -4,6 +4,7 @@ aux
 ?
 ??
 ??
+*.preds
 
 *.annot
 *.cmo
