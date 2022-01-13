@@ -90,13 +90,19 @@ let time f x =
     Printf.printf "Execution time: %f s\n%!" (Sys.time() -. t);
     fx
 
+let map f list =
+  let rec loop acc = function
+    | [] -> List.rev acc
+    | x::xs -> loop (f x::acc) xs in
+  loop [] list
+
 let load_features file =
     let lines = read_lines file in
     let split = Str.split_delim (Str.regexp " ") in
-    List.map (fun l -> List.map int_of_string (split l)) lines
+    map (fun l -> List.map int_of_string (split l)) lines
 
 let load_labels file =
-    List.map int_of_string (read_lines file)
+    map int_of_string (read_lines file)
 
 let print_label label =
     Printf.printf "%n\n" label
