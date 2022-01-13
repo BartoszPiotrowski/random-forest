@@ -10,7 +10,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         let del_tree = remove_old && n >= n_trees in
         let forest = if del_tree then Utils.remove_last forest else forest in
         let updated_trees =
-            List.map (fun tree -> Tree.add ~min_impur tree example) forest in
+            Utils.map (fun tree -> Tree.add ~min_impur tree example) forest in
         if add_tree then Tree.leaf example :: updated_trees else updated_trees
 
     let forest examples =
@@ -21,7 +21,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         List.sort (fun (_, c1) (_, c2) -> compare c2 c1) freqs
 
     let predict forest example =
-        let votes = List.map (Tree.classify example) forest in
+        let votes = Utils.map (Tree.classify example) forest in
         match votes with
         | [] -> failwith "empty list of voting scores"
         | votes -> Utils.avg votes
