@@ -10,7 +10,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         let del_tree = remove_old && n >= n_trees in
         let forest = if del_tree then Utils.remove_last forest else forest in
         let updated_trees =
-            Utils.map (fun tree -> Tree.add ~min_impur tree example) forest in
+            List.map (fun tree -> Tree.add ~min_impur tree example) forest in
         if add_tree then Tree.leaf example :: updated_trees else updated_trees
 
     let forest examples =
@@ -26,7 +26,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
         | Ranking_with_scores of (('a * float) list)
 
     let score forest example =
-        let votes = Utils.map (Tree.classify example) forest in
+        let votes = List.map (Tree.classify example) forest in
         vote votes
 
     let predict ?(pred_type="label") forest example =
@@ -37,7 +37,7 @@ module Make = functor (Data : Tree_online.DATA) -> struct
             | [] -> failwith "empty list of voting scores" in
             Label l
         else if pred_type = "rank" then
-            Ranking (Utils.map (fun (l, _) -> l) scores)
+            Ranking (List.map (fun (l, _) -> l) scores)
         else failwith "unknown prediction type specified"
 
     let classify forest example =
