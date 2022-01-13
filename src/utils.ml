@@ -93,7 +93,7 @@ let time f x =
 let map f list =
   let rec loop acc = function
     | [] -> List.rev acc
-    | x::xs -> loop (f x::acc) xs in
+    | x :: xs -> loop (f x :: acc) xs in
   loop [] list
 
 let load_features file =

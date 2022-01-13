@@ -50,8 +50,8 @@ let () = printf "Training random forest... %!"
 let forest = learn [] train_features_labels
 let () = printf "Done.\n%!"
 let () = printf "Making predictions... %!"
-let preds = List.map (predict ~pred_type:!pred_type forest)
-    (List.map Data.unlabeled test_features)
+let preds = Utils.map (predict ~pred_type:!pred_type forest)
+    (Utils.map Data.unlabeled test_features)
 let () = printf "Done.\n%!"
 let preds_file = open_out !pred_y
 let () = List.iter (fun p ->
