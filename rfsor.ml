@@ -46,7 +46,7 @@ let learn forest features_labels = List.fold_left
         ~remove_old:!remove_old
         forest (Data.labeled example))
     forest features_labels
-let train_features_labels = List.combine train_features train_labels
+let train_features_labels = Utils.combine train_features train_labels
 let () = printf "Training random forest... %!"
 let forest = learn [] train_features_labels
 let () = printf "Done.\n%!"

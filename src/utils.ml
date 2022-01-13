@@ -90,11 +90,19 @@ let time f x =
     Printf.printf "Execution time: %f s\n%!" (Sys.time() -. t);
     fx
 
-let map f list =
+let map f l =
   let rec loop acc = function
     | [] -> List.rev acc
     | x :: xs -> loop (f x :: acc) xs in
-  loop [] list
+  loop [] l
+
+let combine l1 l2 =
+  let rec loop acc q1 q2 =
+    match q1, q2 with
+    | [], _ -> List.rev acc
+    | _, [] -> List.rev acc
+    | h1 :: t1, h2 :: t2 -> loop ((h1, h2) :: acc) t1 t2 in
+  loop [] l1 l2
 
 let load_features file =
     let lines = read_lines file in
