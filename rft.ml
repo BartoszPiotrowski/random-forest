@@ -32,7 +32,6 @@ let () = Arg.parse
 
 (* end of parsing arguments *)
 
-
 let train_examples = load !train_x ~labels:!train_y
 let test_examples = load !test_x
 let tree = match !split_rule with
@@ -42,4 +41,3 @@ let tree = match !split_rule with
 let forest = forest tree !n train_examples
 let preds = classify forest test_examples
 let () = List.iter print_label preds
-
