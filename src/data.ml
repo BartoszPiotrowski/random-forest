@@ -1,7 +1,7 @@
 open Printf
-module ISet = Set.Make(Int)
+module ISet = Set.Make(String)
 
-type feature = int
+type feature = string
 type features = ISet.t
 type 'a example = (features * ('a option))
 type 'a examples = 'a example list
@@ -41,6 +41,7 @@ let random_features examples n =
         | 0 -> acc
         | n -> loop ((random_feature examples) :: acc) (n - 1) in
     loop [] n
+
 let is_splitting examples f =
     let is_mem e = ISet.mem f (features e) in
     let in_some = List.fold_left (fun b e -> b || is_mem e) false examples in

@@ -1,4 +1,3 @@
-module ISet = Set.Make(Int)
 
 
 let min_list = function
@@ -118,13 +117,10 @@ let combine l1 l2 =
 let load_features file =
     let lines = read_lines file in
     let split = Str.split_delim (Str.regexp " ") in
-    map (fun l -> List.map int_of_string (split l)) lines
+    map split lines
 
 let load_labels file =
-    map int_of_string (read_lines file)
-
-let print_label label =
-    Printf.printf "%n\n" label
+    read_lines file
 
 let rec remove_last l =
     match l with

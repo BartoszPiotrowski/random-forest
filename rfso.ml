@@ -56,12 +56,12 @@ let () = printf "Done.\n%!"
 let preds_file = open_out !pred_y
 let () = List.iter (fun p ->
     match p with
-    | Label l -> fprintf preds_file "%n\n" l
+    | Label l -> fprintf preds_file "%s\n" l
     | Ranking r -> fprintf preds_file "%s\n"
-        (String.concat " " (List.map string_of_int r))
+        (String.concat " " r)
     | Ranking_with_scores r -> fprintf preds_file "%s\n"
         (String.concat " " (List.map (fun (t, s) ->
-         String.concat ":" [(string_of_int t); (string_of_float s)]) r))
+         String.concat ":" [t; (string_of_float s)]) r))
 ) preds
 let () = close_out preds_file
 let () = printf "\n## Stats of the trained forest ##\n%!"
